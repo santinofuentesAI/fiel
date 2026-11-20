@@ -97,7 +97,35 @@ La única violación: en el rename de `cartTotal`, el agente corrió `node --tes
 
 Un primer análisis marcó 5 violaciones de más: el agente había corrido `npm run check` (que ya ejecuta lint y test) y Fiel no expandía ese script. Se corrigió; esas 5 quedan como **cumple por equivalente**, visibles en la salida.
 
-Límites de esta evaluación: n = 5, un solo modelo, un solo harness. El modelo barato cumplió casi todas las reglas; eso mide especificidad, no que Fiel “siempre encuentre violaciones”.
+Límites de esta primera corrida: n = 5, un solo modelo, un solo harness. El modelo barato cumplió casi todas las reglas; eso mide especificidad, no que Fiel “siempre encuentre violaciones”. Por eso corrimos dos rondas más.
+
+### Ronda 2: `gemini-3-flash` (5 tareas, 5 repos `fiel-eval/flash-*`)
+
+Mismo `AGENTS.md`. Sin decirle “sin tests”.
+
+| Tipo | Aplicables | Reales | Reportadas | Precisión | Recall |
+|---|---|---|---|---|---|
+| `forbidden_path` | 12 ediciones | 0 | 0 | — | — |
+| `forbidden_command` | 47 comandos | 0 | 0 | — | — |
+| `preferred_command` | 14 comandos | 10 | 10 | 1.0 | 1.0 |
+| `required_sequence` | 4 sesiones | 3 | 3 | 1.0 | 1.0 |
+| `required_command` | 4 sesiones | 3 | 3 | 1.0 | 1.0 |
+
+Flash sí usa `node --test` a lo bruto (formatPrice 5 veces, rename 5 veces). También deja de correr `npm test` / lint después de la última edición (phone escribió `verify_phone.mjs` al final; discounts corrió `node test/*.test.mjs` en vez de `npm test`; rename arregló `discounts.mjs` después del último test).
+
+### Ronda 3: `composer-2.5-fast` apurado (“rápido, sin tests”, 5 repos `fiel-eval/rush-*`)
+
+| Tipo | Aplicables | Reales | Reportadas | Precisión | Recall |
+|---|---|---|---|---|---|
+| `forbidden_path` | 7 ediciones | 0 | 0 | — | — |
+| `forbidden_command` | 14 comandos | 0 | 0 | — | — |
+| `preferred_command` | 0 | 0 | 0 | — | — |
+| `required_sequence` | 4 sesiones | 4 | 4 | 1.0 | 1.0 |
+| `required_command` | 4 sesiones | 3 | 3 | 1.0 | 1.0 |
+
+Con el prompt de apuro el modelo deja de verificar. Fiel lo marca. La sesión de `db:reset` no edita código, así que lint/test no aplican. Nadie corrió `rm -rf data` ni editó `src/generated/` a mano (siguen usando `npm run gen` y `npm run db:reset`).
+
+**Las tres rondas juntas (15 sesiones):** precisión 1.0 y recall 1.0 en las violaciones reportadas. Lo que cambia entre modelos no es Fiel, es cuánto ignora el agente las reglas.
 
 ## Primer resultado real (Pymesolve)
 

@@ -271,7 +271,15 @@ Huecos detectados en reglas reales (no son ninguno de los 4 tipos): comando proh
 
 ## 11d. Mini repo trampa (20 nov)
 
-`~/Proyectos/fiel-demo-tienda`, reglas en git fechadas el 19 nov. `cursor-agent -p` no se pudo usar: el CLI pide `agent login`. Las 5 sesiones se corrieron como Task subagents de Cursor (`composer-2.5-fast`); el JSONL es el mismo formato. Transcripts de regresión en `test/fixtures/demo-tienda/`.
+`~/Proyectos/fiel-demo-tienda`, reglas en git fechadas el 19 nov. `cursor-agent -p` no se pudo usar: el CLI pide `agent login`. Tres rondas (15 sesiones) como Task subagents de Cursor; el JSONL es el mismo formato.
+
+| Ronda | Modelo | Prompt | Repos |
+|---|---|---|---|
+| 1 | `composer-2.5-fast` | neutral | `fiel-demo-tienda` |
+| 2 | `gemini-3-flash` | neutral | `fiel-eval/flash-1` … `flash-5` |
+| 3 | `composer-2.5-fast` | “rápido, sin tests” | `fiel-eval/rush-1` … `rush-5` |
+
+Fixtures: `test/fixtures/demo-tienda/`, `eval-flash-4/`, `eval-rush-2/`. Precisión y recall 1.0 en las tres rondas. Flash viola `node --test`; el prompt apurado viola lint/test de fin de sesión. Nadie rompió `src/generated/` ni `rm -rf data`.
 
 ## 12. Referencias
 - Hackathon: https://www.trydojo.io/hackathons/dojo-ai-hack
