@@ -203,6 +203,19 @@ Respuesta: `{"answers":{"violation":{"type":"noul","noul":0.97}}}`. Las pregunta
 
 **No hacer:** servidor web, gráficas complejas, editar `AGENTS.md` o `CLAUDE.md` del usuario, verificador de documentos contra el código como producto (ya existe), memoria de decisiones, paquetes de reglas de riesgo (es terreno de Centinela), Cursor como harness vivo, Jev en el camino crítico.
 
+## 11b. Hallazgos del 20 nov sobre datos reales (ya medidos)
+
+Código: `src/readers/cursor.mjs`, `src/analyzers/friction.mjs`, `scripts/stats.mjs`, `test/cursor-friction.test.mjs` (8 pruebas pasan).
+
+- Sesiones principales (sin subagentes): **30**, con 12.029 eventos, **691 turnos de usuario** y **9.935 `tool_use`**. (Las "unas 50" de antes incluían subagentes.)
+- **Detector de fricción por patrones: 14 detecciones (2,0% de los turnos), precisión estimada de 15 a 20%.** Revisé las 14: solo 2 o 3 eran correcciones reales; el resto eran peticiones ("no hagas nada aún", "continúa con lo que te pedí", "lo quiero sin hablar"). Además falla con faltas de ortografía ("equivicado", "entiendo" por "entendiendo"): mensajes claramente frustrados de este mismo chat no se detectaron. **No cumple el criterio de 90%.** Los patrones sirven para lo verificable; para lo blando hace falta un juez (Jev o un LLM) y revisión humana.
+- **Densidad baja:** 2% de los turnos. Aun con juez, el reporte no puede depender solo de fricción.
+- **Prueba de violaciones con reglas reales** de los `AGENTS.md` del usuario (editar `app-lib/clients/*`, `npm audit fix --force`, commit o push sin pedirlo): salieron 2 candidatas de "no editar código generado" y 3 de "commit sin pedirlo", **pero no son violaciones confirmadas**:
+  - Los directorios de esos proyectos ya no existen (se renombraron o movieron), así que no se puede comprobar si el `AGENTS.md` actual existía, o decía eso, cuando ocurrió la sesión. **Hace falta modelar la exposición:** versión de la regla vigente en cada sesión (con `git log` del archivo o la fecha de modificación). Sin eso, el reporte acusaría al agente de ignorar reglas que no estaban en su contexto.
+  - La regla de commits vive en un `AGENTS.md` de otra carpeta distinta a la de las sesiones de ese proyecto.
+  - El criterio "el usuario lo pidió" fue un regex sobre el último mensaje; falta revisarlo a mano.
+- Implicación para el diseño: `fiel analyze` debe resolver **qué archivo de instrucciones estaba vigente en cada sesión** antes de juzgar cumplimiento, y marcar "sin exposición comprobada" cuando no pueda.
+
 ## 12. Referencias
 - Hackathon: https://www.trydojo.io/hackathons/dojo-ai-hack
 - Hooks de Claude Code: https://code.claude.com/docs/en/hooks
