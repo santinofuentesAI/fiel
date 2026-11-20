@@ -1,32 +1,10 @@
 # Fiel
 
-> **Tu agente piensa. Fiel decide qué tiene que recordar.**
+> **Tu agente no necesita más contexto. Necesita el correcto, y saber si lo está usando.**
 
-Hoy le pegas el mismo recordatorio a cada prompt y rezas para que el agente lo respete. Fiel pone al lado de tu agente un segundo cerebro, pequeño y rápido: un **modelo de decisión** (tipo [Jev](https://github.com/feder-cr/jev)) que no escribe texto. Solo contesta preguntas con probabilidades, sin gastar tokens de tu LLM, y puede correr en la CPU de tu laptop (sus autores reportan entre 28 y 130 ms).
+Hoy escribes un `AGENTS.md`, pegas recordatorios en cada prompt y no tienes cómo saber si sirvieron. Fiel lee las sesiones que ya tienes en disco y te dice, con evidencia, qué reglas tu agente cumplió, cuáles ignoró, cuáles se perdieron al compactar y cuáles te cuestan tokens en cada turno sin venir al caso. Después arma el contexto que sí le sirve a **tu** proyecto y lo mejora con cada sesión.
 
-El contexto de tu agente deja de ser algo que **escribes** y pasa a ser algo que se **decide**, con evidencia, a partir de tu proyecto.
-
-## Tres decisiones que Fiel toma por ti
-
-| Momento | La pregunta | Tipo de respuesta |
-|---|---|---|
-| Justo antes de que el agente toque algo | De todas las reglas de este proyecto, ¿cuáles importan **ahora**? | elección entre opciones |
-| Después de cada acción | ¿Esta acción rompió una regla que sí estaba en su contexto? | probabilidad de sí o no |
-| Después de cada semana | ¿Esta línea de contexto todavía merece ocupar sitio en cada turno? | puntaje |
-
-Así se le pregunta al modelo de decisión (formato real del protocolo `POST /v1/systemone` de Jev; la respuesta mostrada es la forma del resultado, no una medición):
-
-```json
-{"state": {"instruction": "No edites el código generado en app-lib/clients/",
-           "action": "StrReplace app-lib/clients/index.ts"},
- "questions": {"violation": {"type": "noul",
-               "instructions": "Does the action violate the instruction?"}}}
-```
-```json
-{"answers": {"violation": {"type": "noul", "noul": 0.97}}}
-```
-
-**Si no hay modelo, no pasa nada.** El núcleo de Fiel es determinístico (rutas, comandos, secuencias) y corre sin API key y sin servidor. El modelo de decisión es una pieza opcional que solo se activa si supera una compuerta de calidad medida sobre casos reales; si no la supera, queda apagado. Habla el protocolo de Jev, así que sirve con Jev alojado, con `jevos` local, con laya o con Kev.
+El contexto deja de ser algo que adivinas y pasa a ser algo que se mide.
 
 ## Qué mide
 
@@ -54,6 +32,10 @@ Sin API key, sin servidor, sin cuenta. Todo corre en tu máquina y tus transcrip
 | `.claude/rules` con `paths:` (nativo de Claude Code) | Cuándo se carga una regla |
 | **Fiel** | **Si el agente hizo caso a la regla**, medido en sesiones reales |
 
+## Opcional: un modelo de decisión
+
+Para las reglas blandas ("escribe código limpio"), donde un patrón no alcanza, Fiel puede apoyarse en un modelo de decisión pequeño como [Jev](https://github.com/feder-cr/jev) o uno compatible, que responde preguntas de sí o no con probabilidades. Es opcional y está apagado por defecto: solo se activa si supera una compuerta de calidad medida sobre casos reales. Todo lo demás funciona sin modelo y sin API key.
+
 ## Estado (honesto)
 
 | Pieza | Estado |
@@ -64,7 +46,7 @@ Sin API key, sin servidor, sin cuenta. Todo corre en tu máquina y tus transcrip
 | Automatizaciones de contexto generadas desde tu proyecto y mejora continua | En construcción |
 | `fiel analyze`, `report`, `suggest`, `apply` | En construcción |
 | Hooks para Claude Code y Codex | En construcción |
-| Modelo de decisión (Jev o compatible) para elegir contexto y juzgar cumplimiento | Opcional; solo se activa si pasa una compuerta de calidad medida |
+| Modelo de decisión opcional (Jev o compatible) para reglas blandas | Opcional; apagado salvo que pase una compuerta de calidad medida |
 
 ## Primer hallazgo
 
