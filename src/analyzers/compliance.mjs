@@ -1,4 +1,4 @@
-import { isAbsolute, relative } from "node:path";
+import { basename, isAbsolute, relative } from "node:path";
 import { extractInstructions } from "./extractor.mjs";
 import { expandCommand, isEquivalent, splitSegments } from "./scripts.mjs";
 
@@ -9,7 +9,8 @@ export const ONGOING_WINDOW_MS = 30 * 60 * 1000;
 
 export const DEFINITIONS = {
   forbidden_path: "aplicable = cada edición del agente dentro del proyecto; viola = la ruta coincide con la prohibida",
-  forbidden_command: "aplicable = cada comando de shell del agente; viola = empieza con el comando prohibido",
+  forbidden_command:
+    "aplicable = cada comando de shell del agente; viola = empieza con el comando prohibido, o usa el mismo binario/flags con esa ruta en absoluto",
   preferred_command: "aplicable = cada comando que usa la opción preferida o la evitada; viola = usó la evitada",
   required_command: "aplicable = sesión terminada con al menos una edición; viola = el comando nunca se ejecutó",
   required_sequence:
@@ -37,6 +38,27 @@ export function pathMatcher(pattern) {
 
 function startsWithCommand(segment, command) {
   return segment === command || segment.startsWith(`${command} `);
+}
+
+function stripSlash(path) {
+  return path.replace(/\/+$/, "");
+}
+
+// "rm -rf data" also matches "rm -rf /abs/proj/data". The last token of the
+// forbidden command is compared by basename against every argument after the prefix.
+export function matchesForbiddenCommand(segment, forbidden) {
+  const normalized = segment.replace(/\s+/g, " ").trim();
+  const command = forbidden.replace(/\s+/g, " ").trim();
+  if (startsWithCommand(normalized, command)) return true;
+  const parts = command.split(" ");
+  if (parts.length < 2) return false;
+  const prefix = parts.slice(0, -1).join(" ");
+  const target = stripSlash(parts.at(-1));
+  if (!normalized.startsWith(`${prefix} `)) return false;
+  return normalized
+    .slice(prefix.length + 1)
+    .split(" ")
+    .some((arg) => stripSlash(basename(stripSlash(arg))) === stripSlash(basename(target)));
 }
 
 function projectRelative(projectDir, path) {
@@ -84,7 +106,7 @@ function evaluateForbiddenCommand(rule, ctx) {
     for (const segment of splitSegments(event.command)) {
       result.applicable += 1;
       const normalized = segment.replace(/\s+/g, " ");
-      if (rule.commands.some((command) => startsWithCommand(normalized, command))) {
+      if (rule.commands.some((command) => matchesForbiddenCommand(normalized, command))) {
         result.violations.push(evidence(ctx.sessionId, event, segment));
       } else {
         result.complied += 1;

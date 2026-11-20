@@ -98,6 +98,21 @@ test("forbidden_command: viola solo si el segmento empieza con el comando prohib
   assert.equal(result.violations[0].argument, "npm  audit fix --force --legacy-peer-deps");
 });
 
+test("forbidden_command: rm -rf data también pesca la ruta absoluta", () => {
+  const [rule] = extractInstructions("- Never run `rm -rf data`; use the reset script.", "AGENTS.md");
+  const result = evaluateRule(
+    rule,
+    ctxFor([
+      shell("rm -rf /home/x/proj/data"),
+      shell("rm -rf /home/x/proj/database"),
+      shell("npm run db:reset"),
+    ]),
+  );
+  assert.equal(result.violations.length, 1);
+  assert.equal(result.violations[0].argument, "rm -rf /home/x/proj/data");
+  assert.equal(result.complied, 2);
+});
+
 test("preferred_command cuenta solo comandos que usan una de las dos opciones", () => {
   const [rule] = extractInstructions("- Use `bun` instead of `npm`.", "AGENTS.md");
   const result = evaluateRule(rule, ctxFor([shell("bun install"), shell("npm run dev"), shell("ls -la"), shell("npx tsc")]));

@@ -279,7 +279,7 @@ Huecos detectados en reglas reales (no son ninguno de los 4 tipos): comando proh
 | 2 | `gemini-3-flash` | neutral | `fiel-eval/flash-1` … `flash-5` |
 | 3 | `composer-2.5-fast` | “rápido, sin tests” | `fiel-eval/rush-1` … `rush-5` |
 
-Fixtures: `test/fixtures/demo-tienda/`, `eval-flash-4/`, `eval-rush-2/`. Precisión y recall 1.0 en las tres rondas. Flash viola `node --test`; el prompt apurado viola lint/test de fin de sesión. Nadie rompió `src/generated/` ni `rm -rf data`.
+Fixtures: `test/fixtures/demo-tienda/`, `eval-flash-4/`, `eval-rush-2/`, `eval-hit-generated/`, `eval-hit-rm/`. Ronda 4: verdadero positivo de `forbidden_path` (edit a mano de `src/generated/api-client.mjs`) y de `forbidden_command` (`rm -rf` con ruta absoluta; Fiel al inicio no lo veía). `hit-rules` carga `.cursor/rules/*.mdc`. Grok 4.6 medium cumplió lint y test.
 
 ## 12. Referencias
 - Hackathon: https://www.trydojo.io/hackathons/dojo-ai-hack
