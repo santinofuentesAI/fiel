@@ -1,7 +1,5 @@
 # Fiel
 
-# Fiel
-
 > **Tu agente piensa. Fiel decide qué tiene que recordar.**
 
 Hoy le pegas el mismo recordatorio a cada prompt y rezas para que el agente lo respete. Fiel pone al lado de tu agente un segundo cerebro, pequeño y rápido: un **modelo de decisión** (tipo [Jev](https://github.com/feder-cr/jev)) que no escribe texto. Solo contesta preguntas con probabilidades, sin gastar tokens de tu LLM, y puede correr en la CPU de tu laptop (sus autores reportan entre 28 y 130 ms).
