@@ -147,6 +147,22 @@ Sin servidor web ni gráficas: colores ANSI (verde, amarillo, rojo) y barras ASC
 - Un rechazo manual cuenta solo si el `PreToolUse` fue `allow` o `ask` (nunca un `deny` de Fiel) y el siguiente evento es otro `PreToolUse`, un `UserPromptSubmit` o un `Stop` sin `PostToolUse` ni `PostToolUseFailure` para ese `tool_use_id`.
 - Cada hook debe responder en menos de 100 ms; modo observación (`--dry-run`) registra sin inyectar.
 
+## 7b. Guardas de seguridad generadas para mejora continua
+
+Decisión del usuario (20 nov): Fiel, a partir del proyecto, crea automatizaciones de seguridad para la mejora continua. Se entiende así, para no chocar con Centinela (guardarraíl de seguridad genérico):
+
+- **Fuente:** solo (a) reglas del `AGENTS.md`/`CLAUDE.md`/reglas del propio proyecto que son verificables, y (b) violaciones medidas en sus sesiones. No se envía una lista genérica de reglas de seguridad como producto.
+- **Qué se genera** (`fiel suggest` propone, `fiel apply <id>` aplica, todo en `.fiel/guards.json`):
+  - `deny_path`: bloquear `Edit`/`Write` sobre rutas o globs (por ejemplo `app-lib/clients/**`).
+  - `deny_command`: bloquear comandos de shell por patrón (por ejemplo `npm audit fix --force`).
+  - `require_confirmation`: `ask` para acciones que la regla pide pedir antes (por ejemplo `git commit`, `git push`).
+  - `require_sequence`: comprobación al terminar o al hacer commit (por ejemplo tests tras editar `src/`).
+  - Cada guarda lleva `id`, la regla de origen (archivo y línea), la evidencia que la motivó (sesión y evento) y la fecha.
+- **Dónde se ejecutan:** el hook `PreToolUse` de Claude Code y Codex lee `.fiel/guards.json` (respuesta `deny` con razón redactada como información, o `ask`). Exportable como script de pre-commit más adelante (no entra en el MVP).
+- **Ciclo continuo:** medir, proponer guarda, aplicar, volver a medir. `fiel report` compara violaciones antes y después de cada guarda (mismas reglas, ventana de sesiones posterior a la fecha de aplicación). Si no bajan o hay falsos bloqueos (el usuario rechaza o revierte), se propone retirarla o suavizarla de `deny` a `ask`.
+- **Reglas de seguridad de las propias guardas:** nunca se aplica una guarda sin confirmación; nunca se edita la documentación del usuario; modo observación (`--dry-run`) para registrar qué habría bloqueado antes de activar; límites de la sección 7 (respuesta en menos de 100 ms; `deny` solo para reglas duras o rutas no leídas).
+- **Honestidad:** esto depende de que el analizador de la sección 5 y la exposición (sección 11b) funcionen; sin evidencia fiable no se propone ninguna guarda.
+
 ## 8. Jev (opcional, con compuerta)
 
 Jev es un modelo pequeño que no escribe: recibe un texto y una pregunta y devuelve probabilidades. Aquí juzga cumplimiento donde el patrón no ve: dada una instrucción y una acción del agente (o un turno con fricción), ¿hubo violación?
@@ -201,7 +217,7 @@ Respuesta: `{"answers":{"violation":{"type":"noul","noul":0.97}}}`. Las pregunta
 8. Venta débil: puede parecer analítica. Ningún precio del Marketplace está validado; no prometer cifras.
 9. Sin validación con devs reales. Preguntas para el encuentro: ¿tienes alguna regla que tu agente ignora?, ¿cómo te enteras hoy?, ¿instalarías algo que te diga qué reglas se cumplen?
 
-**No hacer:** servidor web, gráficas complejas, editar `AGENTS.md` o `CLAUDE.md` del usuario, verificador de documentos contra el código como producto (ya existe), memoria de decisiones, paquetes de reglas de riesgo (es terreno de Centinela), Cursor como harness vivo, Jev en el camino crítico.
+**No hacer:** servidor web, gráficas complejas, editar `AGENTS.md` o `CLAUDE.md` del usuario, verificador de documentos contra el código como producto (ya existe), memoria de decisiones, paquetes genéricos de reglas de riesgo (es terreno de Centinela; las guardas de la sección 7b se derivan solo de las reglas y violaciones del propio proyecto), Cursor como harness vivo, Jev en el camino crítico.
 
 ## 11b. Hallazgos del 20 nov sobre datos reales (ya medidos)
 
