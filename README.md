@@ -1,15 +1,41 @@
 # Fiel
 
-> **Tu `AGENTS.md` es un acto de fe.** Fiel lo convierte en un número.
+# Fiel
 
-Escribiste "nunca toques X", "corre los tests antes de terminar", "usa bun, no npm". ¿Cuántas veces las cumplió tu agente la semana pasada? No lo sabes. Hoy las reglas se escriben, se esperan y se olvidan.
+> **Tu agente piensa. Fiel decide qué tiene que recordar.**
 
-Fiel lee las sesiones que ya tienes en disco y responde cuatro preguntas:
+Hoy le pegas el mismo recordatorio a cada prompt y rezas para que el agente lo respete. Fiel pone al lado de tu agente un segundo cerebro, pequeño y rápido: un **modelo de decisión** (tipo [Jev](https://github.com/feder-cr/jev)) que no escribe texto. Solo contesta preguntas con probabilidades, sin gastar tokens de tu LLM, y puede correr en la CPU de tu laptop (sus autores reportan entre 28 y 130 ms).
+
+El contexto de tu agente deja de ser algo que **escribes** y pasa a ser algo que se **decide**, con evidencia, a partir de tu proyecto.
+
+## Tres decisiones que Fiel toma por ti
+
+| Momento | La pregunta | Tipo de respuesta |
+|---|---|---|
+| Justo antes de que el agente toque algo | De todas las reglas de este proyecto, ¿cuáles importan **ahora**? | elección entre opciones |
+| Después de cada acción | ¿Esta acción rompió una regla que sí estaba en su contexto? | probabilidad de sí o no |
+| Después de cada semana | ¿Esta línea de contexto todavía merece ocupar sitio en cada turno? | puntaje |
+
+Así se le pregunta al modelo de decisión (formato real del protocolo `POST /v1/systemone` de Jev; la respuesta mostrada es la forma del resultado, no una medición):
+
+```json
+{"state": {"instruction": "No edites el código generado en app-lib/clients/",
+           "action": "StrReplace app-lib/clients/index.ts"},
+ "questions": {"violation": {"type": "noul",
+               "instructions": "Does the action violate the instruction?"}}}
+```
+```json
+{"answers": {"violation": {"type": "noul", "noul": 0.97}}}
+```
+
+**Si no hay modelo, no pasa nada.** El núcleo de Fiel es determinístico (rutas, comandos, secuencias) y corre sin API key y sin servidor. El modelo de decisión es una pieza opcional que solo se activa si supera una compuerta de calidad medida sobre casos reales; si no la supera, queda apagado. Habla el protocolo de Jev, así que sirve con Jev alojado, con `jevos` local, con laya o con Kev.
+
+## Qué mide
 
 1. **¿Qué reglas se cumplen y cuáles se violan?** Con la llamada exacta como evidencia.
 2. **¿Cuáles se perdieron al compactar la conversación?**
 3. **¿Cuáles nunca vinieron al caso** pero ocupan tokens en cada turno de cada sesión?
-4. **¿Qué conviene fijar, endurecer o podar?** Y lo aplica en un segundo, solo dentro de `.fiel/`; nunca toca tu `AGENTS.md`.
+4. **¿Qué conviene fijar, afinar o podar?** Y lo aplica en un segundo, solo dentro de `.fiel/`; nunca toca tu `AGENTS.md`.
 
 ## Mejora continua: automatizaciones de contexto hechas a la medida de tu proyecto
 
@@ -20,7 +46,7 @@ Hoy cada dev escribe a mano automatizaciones para que su agente no se salga del 
 - **El ciclo se cierra: medir, proponer, aplicar, volver a medir.** `fiel report` te dice si el cumplimiento subió y cuántos tokens cuesta cada automatización. Las que no ayudan se podan; las que ayudan se afinan.
 - Todo vive en `.fiel/` y nada se aplica sin tu confirmación.
 
-Sin API key, sin servidor, sin cuenta. Corre en tu máquina y tus transcripts no salen de ella.
+Sin API key, sin servidor, sin cuenta. Todo corre en tu máquina y tus transcripts no salen de ella, tampoco hacia el modelo de decisión si lo corres en local.
 
 ## Por qué no es otra herramienta de documentación
 
@@ -40,7 +66,7 @@ Sin API key, sin servidor, sin cuenta. Corre en tu máquina y tus transcripts no
 | Automatizaciones de contexto generadas desde tu proyecto y mejora continua | En construcción |
 | `fiel analyze`, `report`, `suggest`, `apply` | En construcción |
 | Hooks para Claude Code y Codex | En construcción |
-| Juez opcional con un modelo tipo Jev | Opcional; solo se activa si pasa una compuerta de calidad medida |
+| Modelo de decisión (Jev o compatible) para elegir contexto y juzgar cumplimiento | Opcional; solo se activa si pasa una compuerta de calidad medida |
 
 ## Primer hallazgo
 
