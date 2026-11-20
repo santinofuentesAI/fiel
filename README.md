@@ -11,13 +11,13 @@ Fiel lee las sesiones que ya tienes en disco y responde cuatro preguntas:
 3. **¿Cuáles nunca vinieron al caso** pero ocupan tokens en cada turno de cada sesión?
 4. **¿Qué conviene fijar, endurecer o podar?** Y lo aplica en un segundo, solo dentro de `.fiel/`; nunca toca tu `AGENTS.md`.
 
-## Mejora continua: automatizaciones de seguridad hechas a la medida de tu proyecto
+## Mejora continua: automatizaciones de contexto hechas a la medida de tu proyecto
 
-Fiel no se queda en el diagnóstico. Con lo que mide en **tu** proyecto, propone guardas ejecutables y las aplica cuando tú dices:
+Hoy cada dev escribe a mano automatizaciones para que su agente no se salga del camino: un recordatorio pegado en cada prompt, una regla repetida, una nota que se olvida actualizar. Fiel las **genera a partir de tu proyecto y las mejora con cada sesión**:
 
-- Una regla de tu `AGENTS.md` que el agente violó ("no edites `app-lib/clients/`", "nunca corras `npm audit fix --force`", "no hagas commit sin que te lo pida") pasa de texto a **guarda**: un bloqueo duro en el hook `PreToolUse` o una comprobación antes del commit.
-- Las guardas salen de tus propias reglas y de las violaciones que ocurrieron, no de una lista genérica de reglas de seguridad.
-- El ciclo se cierra: **medir → proponer guarda → aplicar → volver a medir.** `fiel report` te dice si las violaciones bajaron después de aplicarla; si no bajaron, la guarda se revisa o se retira.
+- **Qué recordarle al agente y cuándo.** Una regla que el agente ignoró, o que se perdió al compactar, se convierte en una automatización de contexto: se inyecta al empezar la sesión, tras compactar, o justo antes de que lea la ruta donde importa. Solo eso, no todo el manual.
+- **Salen de tu proyecto**, de tus propias reglas y de lo que realmente pasó en tus sesiones, no de una plantilla genérica.
+- **El ciclo se cierra: medir, proponer, aplicar, volver a medir.** `fiel report` te dice si el cumplimiento subió y cuántos tokens cuesta cada automatización. Las que no ayudan se podan; las que ayudan se afinan.
 - Todo vive en `.fiel/` y nada se aplica sin tu confirmación.
 
 Sin API key, sin servidor, sin cuenta. Corre en tu máquina y tus transcripts no salen de ella.
@@ -37,7 +37,7 @@ Sin API key, sin servidor, sin cuenta. Corre en tu máquina y tus transcripts no
 | Lector de transcripts de Cursor | Funciona. Probado con 30 sesiones reales: 12.029 eventos, 9.935 llamadas a herramientas, 691 turnos. 8 de 8 pruebas pasan |
 | Detector de fricción humana | Prototipo con precisión baja (ver abajo) |
 | Extractor de reglas y cuatro patrones verificables | En construcción |
-| Guardas de seguridad generadas desde tus reglas y tus violaciones | En construcción |
+| Automatizaciones de contexto generadas desde tu proyecto y mejora continua | En construcción |
 | `fiel analyze`, `report`, `suggest`, `apply` | En construcción |
 | Hooks para Claude Code y Codex | En construcción |
 | Juez opcional con un modelo tipo Jev | Opcional; solo se activa si pasa una compuerta de calidad medida |

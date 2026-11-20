@@ -147,21 +147,22 @@ Sin servidor web ni gráficas: colores ANSI (verde, amarillo, rojo) y barras ASC
 - Un rechazo manual cuenta solo si el `PreToolUse` fue `allow` o `ask` (nunca un `deny` de Fiel) y el siguiente evento es otro `PreToolUse`, un `UserPromptSubmit` o un `Stop` sin `PostToolUse` ni `PostToolUseFailure` para ese `tool_use_id`.
 - Cada hook debe responder en menos de 100 ms; modo observación (`--dry-run`) registra sin inyectar.
 
-## 7b. Guardas de seguridad generadas para mejora continua
+## 7b. Automatizaciones de contexto generadas para mejora continua
 
-Decisión del usuario (20 nov): Fiel, a partir del proyecto, crea automatizaciones de seguridad para la mejora continua. Se entiende así, para no chocar con Centinela (guardarraíl de seguridad genérico):
+Decisión del usuario (20 nov): a partir del proyecto, Fiel crea las automatizaciones que hoy cada dev escribe a mano para mantener al agente en el camino (recordatorios por prompt, reglas repetidas, notas), y las mejora de forma continua. **Es contexto, no guardas de seguridad ni bloqueos.** Un error anterior de este documento las describía como guardas `deny`/`ask`; se retiró.
 
-- **Fuente:** solo (a) reglas del `AGENTS.md`/`CLAUDE.md`/reglas del propio proyecto que son verificables, y (b) violaciones medidas en sus sesiones. No se envía una lista genérica de reglas de seguridad como producto.
-- **Qué se genera** (`fiel suggest` propone, `fiel apply <id>` aplica, todo en `.fiel/guards.json`):
-  - `deny_path`: bloquear `Edit`/`Write` sobre rutas o globs (por ejemplo `app-lib/clients/**`).
-  - `deny_command`: bloquear comandos de shell por patrón (por ejemplo `npm audit fix --force`).
-  - `require_confirmation`: `ask` para acciones que la regla pide pedir antes (por ejemplo `git commit`, `git push`).
-  - `require_sequence`: comprobación al terminar o al hacer commit (por ejemplo tests tras editar `src/`).
-  - Cada guarda lleva `id`, la regla de origen (archivo y línea), la evidencia que la motivó (sesión y evento) y la fecha.
-- **Dónde se ejecutan:** el hook `PreToolUse` de Claude Code y Codex lee `.fiel/guards.json` (respuesta `deny` con razón redactada como información, o `ask`). Exportable como script de pre-commit más adelante (no entra en el MVP).
-- **Ciclo continuo:** medir, proponer guarda, aplicar, volver a medir. `fiel report` compara violaciones antes y después de cada guarda (mismas reglas, ventana de sesiones posterior a la fecha de aplicación). Si no bajan o hay falsos bloqueos (el usuario rechaza o revierte), se propone retirarla o suavizarla de `deny` a `ask`.
-- **Reglas de seguridad de las propias guardas:** nunca se aplica una guarda sin confirmación; nunca se edita la documentación del usuario; modo observación (`--dry-run`) para registrar qué habría bloqueado antes de activar; límites de la sección 7 (respuesta en menos de 100 ms; `deny` solo para reglas duras o rutas no leídas).
-- **Honestidad:** esto depende de que el analizador de la sección 5 y la exposición (sección 11b) funcionen; sin evidencia fiable no se propone ninguna guarda.
+- **Fuente:** reglas del `AGENTS.md`/`CLAUDE.md`/reglas del propio proyecto y lo medido en sus sesiones (sección 5). Nada de plantillas genéricas.
+- **Qué se genera** (`fiel suggest` propone, `fiel apply <id>` aplica, todo en `.fiel/automations.json`): una **automatización de contexto** es un hecho breve más un **disparador**:
+  - `session_start`: al iniciar o reanudar la sesión.
+  - `after_compact`: tras compactar, reinyectar lo que se perdió.
+  - `before_read:<glob>`: justo antes de que el agente lea esa ruta (el contexto llega junto al resultado de `Read`).
+  - `before_prompt`: recordatorio global muy corto junto al prompt (máximo 1 a 3).
+  - Cada una lleva `id`, la regla de origen (archivo y línea), la evidencia que la motivó (sesión y evento), la fecha de aplicación y su costo en tokens.
+- **Cómo se entrega:** con los hooks `SessionStart`, `PreCompact`, `UserPromptSubmit` y `PreToolUse` sobre `Read` (`additionalContext`), siempre redactado como información, máximo ~700 caracteres en total por momento.
+- **Ciclo continuo:** medir, proponer automatización, aplicar, volver a medir. `fiel report` compara cumplimiento antes y después (misma regla, sesiones posteriores a la fecha de aplicación) y el costo en tokens. Las que no mejoran el cumplimiento o nunca vienen al caso se proponen para podar; las que mejoran se mantienen o se afinan (por ejemplo, moverlas a `before_read` si estaban en `session_start`).
+- **Seguridad del propio proceso:** nunca se aplica nada sin confirmación; nunca se edita la documentación del usuario; modo observación (`--dry-run`) registra qué habría inyectado.
+- **Bloqueos:** solo se mantiene el tipo `never` explícito de la sección 7 (opcional); no es el producto.
+- **Honestidad:** depende de que el analizador de la sección 5 y la exposición (sección 11b) funcionen; sin evidencia fiable no se propone ninguna automatización.
 
 ## 8. Jev (opcional, con compuerta)
 
@@ -217,7 +218,7 @@ Respuesta: `{"answers":{"violation":{"type":"noul","noul":0.97}}}`. Las pregunta
 8. Venta débil: puede parecer analítica. Ningún precio del Marketplace está validado; no prometer cifras.
 9. Sin validación con devs reales. Preguntas para el encuentro: ¿tienes alguna regla que tu agente ignora?, ¿cómo te enteras hoy?, ¿instalarías algo que te diga qué reglas se cumplen?
 
-**No hacer:** servidor web, gráficas complejas, editar `AGENTS.md` o `CLAUDE.md` del usuario, verificador de documentos contra el código como producto (ya existe), memoria de decisiones, paquetes genéricos de reglas de riesgo (es terreno de Centinela; las guardas de la sección 7b se derivan solo de las reglas y violaciones del propio proyecto), Cursor como harness vivo, Jev en el camino crítico.
+**No hacer:** servidor web, gráficas complejas, editar `AGENTS.md` o `CLAUDE.md` del usuario, verificador de documentos contra el código como producto (ya existe), memoria de decisiones, paquetes de reglas de riesgo y guardas de seguridad (es terreno de Centinela; el producto es contexto), Cursor como harness vivo, Jev en el camino crítico.
 
 ## 11b. Hallazgos del 20 nov sobre datos reales (ya medidos)
 
