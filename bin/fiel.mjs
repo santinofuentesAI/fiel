@@ -70,6 +70,8 @@ function describeRule(rule) {
   switch (rule.type) {
     case "forbidden_path":
       return `no editar ${rule.paths.join(", ")}`;
+    case "forbidden_command":
+      return `nunca correr ${rule.commands.map((command) => `"${command}"`).join(", ")}`;
     case "preferred_command":
       return `usar "${rule.preferred}" en vez de "${rule.avoided}"`;
     case "required_command":

@@ -73,6 +73,13 @@ test("forbidden_path: evidencia exacta con herramienta y ruta", () => {
   assert.deepEqual(result.violations.map((v) => [v.sessionId, v.tool, v.argument]), [["s1", "Write", "app-lib/clients/x.ts"]]);
 });
 
+test("forbidden_command: viola solo si el segmento empieza con el comando prohibido", () => {
+  const [rule] = extractInstructions("- Never run `npm audit fix --force`.", "AGENTS.md");
+  const result = evaluateRule(rule, ctxFor([shell("npm audit"), shell("cd app && npm  audit fix --force --legacy-peer-deps")]));
+  assert.deepEqual([result.applicable, result.complied], [3, 2]);
+  assert.equal(result.violations[0].argument, "npm  audit fix --force --legacy-peer-deps");
+});
+
 test("preferred_command cuenta solo comandos que usan una de las dos opciones", () => {
   const [rule] = extractInstructions("- Use `bun` instead of `npm`.", "AGENTS.md");
   const result = evaluateRule(rule, ctxFor([shell("bun install"), shell("npm run dev"), shell("ls -la"), shell("npx tsc")]));

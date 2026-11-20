@@ -56,16 +56,22 @@ test("forbidden_path en español", () => {
   assert.deepEqual(rule.paths, ["db/migrations/"]);
 });
 
-test("no confunde 'nunca hagas commit' ni 'nunca corras' con rutas prohibidas", () => {
+test("no confunde 'nunca hagas commit' con rutas prohibidas", () => {
   assert.equal(
     classifyInstruction("`app/.env` is different: you may read and edit it, but never commit it.").type,
     "exposure_only",
   );
-  assert.equal(
-    classifyInstruction("**never** run `npm audit fix --force`: it upgrades pinned SDKs (`@trustless-work/escrow`).").type,
-    "exposure_only",
-  );
   assert.equal(classifyInstruction("Do not commit `AGENTS.md`, `.cursor/`, or `node_modules`.").type, "exposure_only");
+});
+
+test("forbidden_command toma solo comandos con argumentos después de 'never run'", () => {
+  const rule = classifyInstruction(
+    "Ignore `npm audit` warnings and **never** run `npm audit fix --force`: it upgrades pinned SDKs (`@trustless-work/escrow`).",
+  );
+  assert.equal(rule.type, "forbidden_command");
+  assert.deepEqual(rule.commands, ["npm audit fix --force"]);
+  assert.deepEqual(classifyInstruction("Nunca corras `git push --force` en main.").commands, ["git push --force"]);
+  assert.equal(classifyInstruction("Never use `any` in TypeScript.").type, "exposure_only");
 });
 
 test("required_sequence toma el alcance de 'después de editar'", () => {

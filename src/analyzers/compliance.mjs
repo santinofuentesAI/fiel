@@ -9,6 +9,7 @@ export const ONGOING_WINDOW_MS = 30 * 60 * 1000;
 
 export const DEFINITIONS = {
   forbidden_path: "aplicable = cada edición del agente dentro del proyecto; viola = la ruta coincide con la prohibida",
+  forbidden_command: "aplicable = cada comando de shell del agente; viola = empieza con el comando prohibido",
   preferred_command: "aplicable = cada comando que usa la opción preferida o la evitada; viola = usó la evitada",
   required_command: "aplicable = sesión terminada con al menos una edición; viola = el comando nunca se ejecutó",
   required_sequence:
@@ -72,6 +73,22 @@ function evaluateForbiddenPath(rule, ctx) {
       result.violations.push(evidence(ctx.sessionId, edit.event, edit.rel));
     } else {
       result.complied += 1;
+    }
+  }
+  return result;
+}
+
+function evaluateForbiddenCommand(rule, ctx) {
+  const result = { applicable: 0, complied: 0, violations: [] };
+  for (const { event } of ctx.shells) {
+    for (const segment of splitSegments(event.command)) {
+      result.applicable += 1;
+      const normalized = segment.replace(/\s+/g, " ");
+      if (rule.commands.some((command) => startsWithCommand(normalized, command))) {
+        result.violations.push(evidence(ctx.sessionId, event, segment));
+      } else {
+        result.complied += 1;
+      }
     }
   }
   return result;
@@ -152,6 +169,8 @@ export function evaluateRule(rule, ctx) {
   switch (rule.type) {
     case "forbidden_path":
       return evaluateForbiddenPath(rule, ctx);
+    case "forbidden_command":
+      return evaluateForbiddenCommand(rule, ctx);
     case "preferred_command":
       return evaluatePreferredCommand(rule, ctx);
     case "required_command":

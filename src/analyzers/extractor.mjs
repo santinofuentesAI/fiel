@@ -19,6 +19,8 @@ const FORBID_LOCATION = new RegExp(
   `\\b(?:${EDIT_VERBS}|edita|modifica)\\b(?:(?!\\.\\s).)*?\\b(?:never|not|nunca|no)\\s+(?:in|inside|under|en|dentro de)\\b`,
   "i",
 );
+const FORBID_RUN =
+  /\b(?:don['’]?t|do not|never|nunca|no)\s+(?:\S+\s+)?(?:run|execute|call|invoke|corras|ejecutes|lances|correr|ejecutar)\b/i;
 const PREFERRED = new RegExp(
   "\\b(?:use|usa|usar|utiliza|prefer|prefiere)\\s+`([^`]+)`\\s*,?\\s*(?:instead of|rather than|not|over|en lugar de|en vez de|y no|no)\\s+`([^`]+)`",
   "i",
@@ -61,11 +63,23 @@ function forbiddenPaths(text) {
     .map((span) => span.value);
 }
 
+function forbiddenCommands(text) {
+  const match = FORBID_RUN.exec(text);
+  if (!match) return [];
+  const negationEnd = match.index + match[0].length;
+  return codeSpans(text)
+    .filter((span) => span.index >= negationEnd && /\s/.test(span.value) && !span.value.includes("://"))
+    .map((span) => span.value.replace(/\s+/g, " "));
+}
+
 export function classifyInstruction(rawText) {
   const text = plain(rawText);
 
   const paths = forbiddenPaths(text);
   if (paths.length > 0) return { type: "forbidden_path", verifiable: true, paths };
+
+  const forbiddenCmds = forbiddenCommands(text);
+  if (forbiddenCmds.length > 0) return { type: "forbidden_command", verifiable: true, commands: forbiddenCmds };
 
   const preferred = PREFERRED.exec(text);
   if (preferred && isCommandLike(preferred[1]) && isCommandLike(preferred[2])) {

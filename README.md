@@ -52,6 +52,7 @@ Juzgar una sesión con las reglas de hoy da resultados falsos: la regla pudo esc
 | Tipo | Ejemplo de regla | Viola cuando |
 |---|---|---|
 | `forbidden_path` | "Don't edit `app-lib/clients/*`" | El agente edita una ruta que coincide |
+| `forbidden_command` | "Never run `npm audit fix --force`" | Corre un comando que empieza así |
 | `preferred_command` | "Use `bun` instead of `npm`" | Corre la opción evitada |
 | `required_command` | "Always run `npm run lint`" | Terminó una sesión con ediciones y nunca lo corrió |
 | `required_sequence` | "Verify each step with `npm test`" | Editó código y no verificó después de la última edición |
@@ -72,12 +73,12 @@ El resto de instrucciones queda como `exposure_only`: se cuenta su costo en toke
 |---|---|
 | Lector de transcripts de Cursor | Funciona. 30 sesiones reales leídas |
 | Exposición por fecha (git y mtime) | Funciona |
-| Extractor con origen `[archivo:línea]` y 4 patrones | Funciona |
+| Extractor con origen `[archivo:línea]` y 5 patrones | Funciona |
 | `fiel analyze` (ruta, `--all`, `--json`) | Funciona. 37 pruebas pasan |
 | Reglas perdidas al compactar | Pendiente |
 | `suggest`, automatizaciones de contexto, hooks para Claude Code y Codex | Pendiente |
 
-Límites conocidos: Cursor no guarda resultados de herramientas, así que un comando que corrió cuenta aunque haya fallado. Las ediciones hechas por subagentes no se leen todavía. Reglas del tipo "nunca corras X" o "no leas Y" aún no se verifican.
+Límites conocidos: Cursor no guarda resultados de herramientas, así que un comando que corrió cuenta aunque haya fallado. Las ediciones hechas por subagentes no se leen todavía. Reglas sobre lecturas ("no leas Y", "abre siempre Z") aún no se verifican.
 
 ## Primer resultado real
 
