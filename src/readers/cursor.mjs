@@ -3,6 +3,9 @@ import { homedir } from "node:os";
 import { join, sep } from "node:path";
 
 const USER_QUERY = /<user_query>\s*([\s\S]*?)\s*<\/user_query>/;
+const TIMESTAMP =
+  /<timestamp>\s*[A-Za-z]+,\s*([A-Za-z]+)\s+(\d{1,2}),\s*(\d{4}),\s*(\d{1,2}):(\d{2})\s*(AM|PM)\s*\(UTC([+-]\d{1,2})(?::?(\d{2}))?\)\s*<\/timestamp>/;
+const MONTHS = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
 const EDIT_TOOLS = new Set(["Edit", "Write", "StrReplace", "MultiEdit", "EditNotebook"]);
 const READ_TOOLS = new Set(["Read"]);
 const SHELL_TOOLS = new Set(["Bash", "Shell"]);
@@ -22,6 +25,18 @@ export function extractUserText(raw) {
   return raw.trimStart().startsWith("<") ? "" : raw;
 }
 
+export function parseCursorTimestamp(raw) {
+  const match = TIMESTAMP.exec(raw);
+  if (!match) return null;
+  const [, monthName, day, year, hour, minute, meridiem, offsetHours, offsetMinutes] = match;
+  const month = MONTHS.indexOf(monthName.slice(0, 3).toLowerCase());
+  if (month === -1) return null;
+  const hour24 = (Number(hour) % 12) + (meridiem === "PM" ? 12 : 0);
+  const offset = Number(offsetHours);
+  const offsetMin = Math.sign(offset || 1) * Number(offsetMinutes ?? 0);
+  return new Date(Date.UTC(Number(year), month, Number(day), hour24 - offset, Number(minute) - offsetMin));
+}
+
 export function normalizeLine(line, session, index) {
   let obj;
   try {
@@ -36,7 +51,8 @@ export function normalizeLine(line, session, index) {
     if (block?.type === "text" && typeof block.text === "string") {
       if (obj.role === "user") {
         const text = extractUserText(block.text);
-        if (text) events.push({ session, index, role: "user", kind: "user_text", text });
+        const timestamp = parseCursorTimestamp(block.text);
+        if (text) events.push({ session, index, role: "user", kind: "user_text", text, timestamp });
       } else {
         events.push({ session, index, role: "assistant", kind: "assistant_text", text: block.text });
       }
@@ -86,7 +102,18 @@ function walk(dir, out) {
   }
 }
 
-export function findCursorTranscripts(root = join(homedir(), ".cursor", "projects")) {
+export function sessionStart(events) {
+  for (const event of events) {
+    if (event.kind === "user_text" && event.timestamp) return event.timestamp;
+  }
+  return null;
+}
+
+export function defaultCursorRoot() {
+  return process.env.FIEL_CURSOR_PROJECTS ?? join(homedir(), ".cursor", "projects");
+}
+
+export function findCursorTranscripts(root = defaultCursorRoot()) {
   const files = [];
   let projects = [];
   try {
@@ -104,7 +131,12 @@ export function findCursorTranscripts(root = join(homedir(), ".cursor", "project
     const found = [];
     walk(dir, found);
     for (const file of found) {
-      files.push({ file, project, session: file.split(sep).pop().replace(".jsonl", "") });
+      files.push({
+        file,
+        project,
+        session: file.split(sep).pop().replace(".jsonl", ""),
+        modifiedAt: statSync(file).mtime,
+      });
     }
   }
   return files;

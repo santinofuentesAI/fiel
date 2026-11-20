@@ -108,7 +108,7 @@ Leer `AGENTS.md`, `CLAUDE.md`, `.claude/rules/*.md`, `.cursor/rules/*`. Cada vi�
 4. **Secuencia obligatoria:** "corre los tests después de editar `src/`", "linter antes de hacer commit". Violación: hubo `edit` en el alcance y la sesión terminó, o hubo `git commit`, sin un `shell` de tests/linter posterior al último `edit`. Comandos de tests: detectar por `package.json` scripts y patrones (`test`, `pytest`, `go test`, `cargo test`, `bun test`, `vitest`, `jest`).
 Cada resultado guarda la **evidencia** (índice de evento y la llamada concreta). Sin evidencia no se marca violación.
 
-### 5.3 Detector de fricción humana (reglas blandas)
+### 5.3 Detector de fricción humana (DESCARTADO el 20 nov: precisión de 15 a 20%, ver 11b)
 Un mensaje del usuario inmediatamente posterior a un turno del assistant con `tool_use` que contiene señales de corrección se registra como incidente. Lista inicial (ES/EN), a calibrar con datos reales:
 - ES: "no, te dije", "te dije que", "otra vez", "de nuevo", "borra eso", "revierte", "deshaz", "no hagas", "usa X, no Y", "eso no", "no era eso", "te pedí".
 - EN: "no, I said", "I told you", "again", "revert that", "undo", "don't", "that's not what I asked", "use X not Y".
@@ -180,7 +180,7 @@ Respuesta: `{"answers":{"violation":{"type":"noul","noul":0.97}}}`. Las pregunta
 - Uso: fuera de línea sobre transcripts (la latencia no importa), resultados marcados aparte de los determinísticos, nunca genera bloqueos por sí solo.
 - **Compuerta (sábado en la tarde, máximo 2 h, solo con el MVP pasando):** 40 casos (instrucción, acción, etiqueta). Activar por defecto solo si suma al menos 15 puntos de recall sobre el patrón con 90% de precisión. Si no, queda apagado y se documenta.
 
-## 8b. Dial de rigor (decisión del usuario, 20 nov)
+## 8b. Dial de rigor (DESCARTADO el 20 nov; se conserva solo como registro)
 
 Pedido: que Jev sea **complementario** y que haya un control parecido a la temperatura de los modelos, entre más restringido y más creativo. El usuario no recordaba la palabra; se propone **rigor** (alternativas: estrictez, autonomía, umbral).
 
@@ -246,6 +246,24 @@ Código: `src/readers/cursor.mjs`, `src/analyzers/friction.mjs`, `scripts/stats.
   - La regla de commits vive en un `AGENTS.md` de otra carpeta distinta a la de las sesiones de ese proyecto.
   - El criterio "el usuario lo pidió" fue un regex sobre el último mensaje; falta revisarlo a mano.
 - Implicación para el diseño: `fiel analyze` debe resolver **qué archivo de instrucciones estaba vigente en cada sesión** antes de juzgar cumplimiento, y marcar "sin exposición comprobada" cuando no pueda.
+
+## 11c. Núcleo construido el 20 nov (v0.1.0)
+
+Decisión: Fiel es una CLI real, no una demo. Precisión y transparencia por encima de cobertura; Node `.mjs` sin dependencias. Fricción y dial de rigor descartados.
+
+| Módulo | Qué hace |
+|---|---|
+| `src/readers/cursor.mjs` | Lee transcripts; fecha de cada mensaje desde `<timestamp>` (las 30 sesiones la tienen) |
+| `src/readers/projects.mjs` | Clave de Cursor ↔ ruta real; resuelve la ambigüedad de guiones y espacios recorriendo el disco |
+| `src/analyzers/exposure.mjs` | Versión vigente de `AGENTS.md`, `CLAUDE.md`, `.cursor/rules/*` por sesión: git, luego mtime, si no `unknown` (o `absent` si git muestra que se borró) |
+| `src/analyzers/extractor.mjs` | Instrucciones con `id` estable, `sourceFile`, `lineNumber`, `text`, `tokenEstimate` y tipo; escribe `.fiel/instructions.json` |
+| `src/analyzers/scripts.mjs` | Expande alias de `package.json` para reconocer verificaciones equivalentes (misma firma binario+subcomando; `--write`/`--fix` no cuentan) |
+| `src/analyzers/compliance.mjs` | Por regla: sesiones expuestas, aplicables, cumple (y por equivalente), violaciones con evidencia, tokens acumulados |
+| `bin/fiel.mjs` | `analyze [ruta]`, `--all`, `--json`, `--sessions-from`, `--no-write`; salida 0 o 1 |
+
+Resultado sobre datos reales: de 30 sesiones solo 5 se pueden juzgar (Pymesolve, reglas en git; sus sesiones están bajo la ruta vieja `scaffold-stellar-agentic`, verificado: 230 de 230 rutas editadas existen en Pymesolve). Violaciones confirmadas a mano: 2 ediciones a `app-lib/clients/index.ts` (verdaderos positivos). La primera versión marcaba 4 violaciones de "verifica cada paso" que eran `npx tsc` en lugar de `npm run typecheck`; se corrigió con equivalencias visibles.
+
+Huecos detectados en reglas reales (no son ninguno de los 4 tipos): comando prohibido ("never run `npm audit fix --force`"), lectura prohibida ("la carpeta `Secretos` no se lista") y lectura obligatoria ("SIEMPRE abre la skill …").
 
 ## 12. Referencias
 - Hackathon: https://www.trydojo.io/hackathons/dojo-ai-hack
