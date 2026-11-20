@@ -160,11 +160,11 @@ Decisión del usuario (20 nov): a partir del proyecto, Fiel crea las automatizac
   - Cada una lleva `id`, la regla de origen (archivo y línea), la evidencia que la motivó (sesión y evento), la fecha de aplicación y su costo en tokens.
 - **Cómo se entrega:** con los hooks `SessionStart`, `PreCompact`, `UserPromptSubmit` y `PreToolUse` sobre `Read` (`additionalContext`), siempre redactado como información, máximo ~700 caracteres en total por momento.
 - **Ciclo continuo:** medir, proponer automatización, aplicar, volver a medir. `fiel report` compara cumplimiento antes y después (misma regla, sesiones posteriores a la fecha de aplicación) y el costo en tokens. Las que no mejoran el cumplimiento o nunca vienen al caso se proponen para podar; las que mejoran se mantienen o se afinan (por ejemplo, moverlas a `before_read` si estaban en `session_start`).
-- **Seguridad del propio proceso:** nunca se aplica nada sin confirmación; nunca se edita la documentación del usuario; modo observación (`--dry-run`) registra qué habría inyectado.
+- **Seguridad del propio proceso:** cuánto se aplica solo lo define el dial de rigor (sección 8b); todo cambio queda en la bitácora y se puede deshacer con `fiel undo <id>`; nunca se edita la documentación del usuario; modo observación (`--dry-run`) registra qué habría inyectado.
 - **Bloqueos:** solo se mantiene el tipo `never` explícito de la sección 7 (opcional); no es el producto.
 - **Honestidad:** depende de que el analizador de la sección 5 y la exposición (sección 11b) funcionen; sin evidencia fiable no se propone ninguna automatización.
 
-## 8. Jev (opcional, con compuerta)
+## 8. Jev (complementario, con compuerta y dial de rigor)
 
 Jev es un modelo pequeño que no escribe: recibe un texto y una pregunta y devuelve probabilidades. Aquí juzga cumplimiento donde el patrón no ve: dada una instrucción y una acción del agente (o un turno con fricción), ¿hubo violación?
 
@@ -179,6 +179,20 @@ Jev es un modelo pequeño que no escribe: recibe un texto y una pregunta y devue
 Respuesta: `{"answers":{"violation":{"type":"noul","noul":0.97}}}`. Las preguntas `choice` devuelven además `confidence`. `GET /health` informa el estado. `./jev serve` levanta el servidor. Con `FIEL_DECISION_URL` sirve también Jev alojado, laya o Kev.
 - Uso: fuera de línea sobre transcripts (la latencia no importa), resultados marcados aparte de los determinísticos, nunca genera bloqueos por sí solo.
 - **Compuerta (sábado en la tarde, máximo 2 h, solo con el MVP pasando):** 40 casos (instrucción, acción, etiqueta). Activar por defecto solo si suma al menos 15 puntos de recall sobre el patrón con 90% de precisión. Si no, queda apagado y se documenta.
+
+## 8b. Dial de rigor (decisión del usuario, 20 nov)
+
+Pedido: que Jev sea **complementario** y que haya un control parecido a la temperatura de los modelos, entre más restringido y más creativo. El usuario no recordaba la palabra; se propone **rigor** (alternativas: estrictez, autonomía, umbral).
+
+- **Interfaz:** `fiel --rigor estricto|equilibrado|libre` o valor numérico 0 a 1; se guarda en `.fiel/config.json`. Por defecto `equilibrado`.
+- **Qué controla** (solo umbrales, no cambia reglas duras):
+  1. Probabilidad mínima del modelo (o puntaje determinístico de evidencia, si no hay modelo) para **inyectar** un hecho.
+  2. Máximo de hechos por momento (estricto 2, equilibrado 3, libre 4) y siempre tope de ~700 caracteres.
+  3. Probabilidad y evidencia mínimas para **aplicar solo** una automatización: estricto nunca; equilibrado solo si alta confianza y reversible; libre con evidencia moderada.
+  4. Sesiones mínimas de evidencia antes de **podar** una automatización (estricto muchas, libre pocas).
+- **Valores iniciales sugeridos (provisionales, calibrar con la compuerta):** estricto = probabilidad 0,90, equilibrado = 0,75, libre = 0,55. No están medidos.
+- **Lo que no cambia con el dial:** no se edita `AGENTS.md`/`CLAUDE.md`; todo queda en bitácora y es reversible (`fiel undo`); sin evidencia determinística no se marca una violación de regla verificable; tope de caracteres.
+- **Sin modelo el dial sigue funcionando** sobre umbrales determinísticos (conteo de sesiones y de evidencias). El modelo solo se activa por defecto si pasa la compuerta de la sección 8.
 
 ## 9. Orden de construcción y criterios
 

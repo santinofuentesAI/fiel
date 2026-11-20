@@ -20,7 +20,7 @@ Hoy cada dev escribe a mano automatizaciones para que su agente no se salga del 
 - **Qué recordarle al agente y cuándo.** Una regla que el agente ignoró, o que se perdió al compactar, se convierte en una automatización de contexto: se inyecta al empezar la sesión, tras compactar, o justo antes de que lea la ruta donde importa. Solo eso, no todo el manual.
 - **Salen de tu proyecto**, de tus propias reglas y de lo que realmente pasó en tus sesiones, no de una plantilla genérica.
 - **El ciclo se cierra: medir, proponer, aplicar, volver a medir.** `fiel report` te dice si el cumplimiento subió y cuántos tokens cuesta cada automatización. Las que no ayudan se podan; las que ayudan se afinan.
-- Todo vive en `.fiel/` y nada se aplica sin tu confirmación.
+- Todo vive en `.fiel/`, queda registrado y se puede deshacer. Cuánto aplica solo y cuánto te pregunta lo decide el dial de rigor (más abajo).
 
 Sin API key, sin servidor, sin cuenta. Todo corre en tu máquina y tus transcripts no salen de ella, tampoco hacia el modelo de decisión si lo corres en local.
 
@@ -32,9 +32,19 @@ Sin API key, sin servidor, sin cuenta. Todo corre en tu máquina y tus transcrip
 | `.claude/rules` con `paths:` (nativo de Claude Code) | Cuándo se carga una regla |
 | **Fiel** | **Si el agente hizo caso a la regla**, medido en sesiones reales |
 
-## Opcional: un modelo de decisión
+## Complemento: un modelo de decisión y el dial de rigor
 
-Para las reglas blandas ("escribe código limpio"), donde un patrón no alcanza, Fiel puede apoyarse en un modelo de decisión pequeño como [Jev](https://github.com/feder-cr/jev) o uno compatible, que responde preguntas de sí o no con probabilidades. Es opcional y está apagado por defecto: solo se activa si supera una compuerta de calidad medida sobre casos reales. Todo lo demás funciona sin modelo y sin API key.
+Las reglas con patrón (rutas, comandos, secuencias) se verifican de forma determinística. Para todo lo demás, Fiel se apoya en un modelo de decisión pequeño como [Jev](https://github.com/feder-cr/jev) o uno compatible, que responde preguntas de sí, no o elección con probabilidades: ¿qué contexto importa ahora?, ¿esta acción rompió la regla?, ¿esta automatización sigue sirviendo? Es lo que hace que Fiel se automatice en vez de pedirte revisión para cada cosa.
+
+Como la temperatura en un modelo de lenguaje, hay **un dial de rigor** que decide cuánta libertad toma Fiel:
+
+| Rigor | Qué hace |
+|---|---|
+| `estricto` | Solo actúa con evidencia fuerte. Inyecta pocas cosas. Propone y nunca aplica solo. |
+| `equilibrado` (por defecto) | Aplica solo lo de alta confianza y reversible; lo demás lo propone. |
+| `libre` | Más automático y más inventivo: inyecta más contexto, aplica y poda con menos evidencia. Todo queda registrado y se puede deshacer. |
+
+Qué controla el dial: cuánta probabilidad exige el modelo para inyectar o aplicar algo, cuántas cosas entran en cada momento, y cuántas sesiones de evidencia se piden antes de podar. Si no hay modelo, el dial sigue funcionando sobre los umbrales determinísticos. En cualquier nivel, Fiel nunca edita tu `AGENTS.md`, no pasa de unos 700 caracteres por momento y las automatizaciones que aplica pueden deshacerse. Los valores por defecto son provisionales hasta calibrarlos con casos reales, y el modelo solo se activa por defecto si supera una compuerta de calidad medida.
 
 ## Estado (honesto)
 
@@ -46,7 +56,7 @@ Para las reglas blandas ("escribe código limpio"), donde un patrón no alcanza,
 | Automatizaciones de contexto generadas desde tu proyecto y mejora continua | En construcción |
 | `fiel analyze`, `report`, `suggest`, `apply` | En construcción |
 | Hooks para Claude Code y Codex | En construcción |
-| Modelo de decisión opcional (Jev o compatible) para reglas blandas | Opcional; apagado salvo que pase una compuerta de calidad medida |
+| Modelo de decisión complementario (Jev o compatible) y dial de rigor | En construcción; el modelo solo se activa por defecto si pasa una compuerta de calidad medida |
 
 ## Primer hallazgo
 
