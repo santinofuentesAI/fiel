@@ -1,0 +1,10 @@
+node_modules/
+.env
+.fiel/log.jsonl
+.fiel/cache/
+.DS_Store
+
+# Material personal del workspace, no forma parte del producto
+.cursor/
+.research/
+AGENTS.md

@@ -1,0 +1,16 @@
+{
+  "name": "fiel",
+  "version": "0.0.1",
+  "description": "Mide si tu agente sigue las instrucciones de AGENTS.md y CLAUDE.md en sesiones reales, y actúa sobre lo medido.",
+  "type": "module",
+  "bin": {
+    "fiel": "./bin/fiel.mjs"
+  },
+  "scripts": {
+    "test": "node --test test/"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "license": "MIT"
+}
