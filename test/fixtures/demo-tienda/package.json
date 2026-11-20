@@ -1,0 +1,13 @@
+{
+  "name": "fiel-demo-tienda",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test test/",
+    "lint": "node scripts/lint.mjs",
+    "gen": "node scripts/gen.mjs",
+    "db:reset": "node scripts/db-reset.mjs",
+    "check": "npm run lint && npm test"
+  }
+}

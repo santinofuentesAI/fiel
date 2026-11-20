@@ -74,13 +74,32 @@ El resto de instrucciones queda como `exposure_only`: se cuenta su costo en toke
 | Lector de transcripts de Cursor | Funciona. 30 sesiones reales leídas |
 | Exposición por fecha (git y mtime) | Funciona |
 | Extractor con origen `[archivo:línea]` y 5 patrones | Funciona |
-| `fiel analyze` (ruta, `--all`, `--json`) | Funciona. 37 pruebas pasan |
+| `fiel analyze` (ruta, `--all`, `--json`) | Funciona. Evaluación medida abajo |
 | Reglas perdidas al compactar | Pendiente |
 | `suggest`, automatizaciones de contexto, hooks para Claude Code y Codex | Pendiente |
 
-Límites conocidos: Cursor no guarda resultados de herramientas, así que un comando que corrió cuenta aunque haya fallado. Las ediciones hechas por subagentes no se leen todavía. Reglas sobre lecturas ("no leas Y", "abre siempre Z") aún no se verifican.
+Límites conocidos: Cursor no guarda resultados de herramientas, así que un comando que corrió cuenta aunque haya fallado. Las ediciones hechas por subagentes no se leen todavía en `fiel analyze` de un proyecto (esta evaluación las copió a sesiones principales). Reglas sobre lecturas ("no leas Y", "abre siempre Z") aún no se verifican.
 
-## Primer resultado real
+## Evaluación (5 sesiones reales, 20 nov 2026)
+
+Repo trampa `fiel-demo-tienda` (Node, sin dependencias, `AGENTS.md` en git). Cinco tareas neutrales que no mencionan las reglas, corridas con el modelo `composer-2.5-fast` en el harness de Cursor. Hoja de verdad revisada a mano contra cada `tool_use`.
+
+| Tipo | Aplicables | Violaciones reales | Reportadas | Precisión | Recall |
+|---|---|---|---|---|---|
+| `forbidden_path` | 8 ediciones | 0 | 0 | — (sin positivos) | — |
+| `forbidden_command` | 33 comandos | 0 | 0 | — | — |
+| `preferred_command` | 5 comandos | 1 | 1 | 1.0 | 1.0 |
+| `required_sequence` | 4 sesiones | 0 | 0 | — | — |
+| `required_command` | 4 sesiones | 0 | 0 | — | — |
+| **Total** | | **1** | **1** | **1.0** | **1.0** |
+
+La única violación: en el rename de `cartTotal`, el agente corrió `node --test test/cart.test.mjs` en vez de `npm test`. Evidencia: sesión `c63d84da`, herramienta `Shell`.
+
+Un primer análisis marcó 5 violaciones de más: el agente había corrido `npm run check` (que ya ejecuta lint y test) y Fiel no expandía ese script. Se corrigió; esas 5 quedan como **cumple por equivalente**, visibles en la salida.
+
+Límites de esta evaluación: n = 5, un solo modelo, un solo harness. El modelo barato cumplió casi todas las reglas; eso mide especificidad, no que Fiel “siempre encuentre violaciones”.
+
+## Primer resultado real (Pymesolve)
 
 Sobre 5 sesiones reales de un proyecto con `AGENTS.md` en git, con la versión de las reglas vigente en cada sesión:
 

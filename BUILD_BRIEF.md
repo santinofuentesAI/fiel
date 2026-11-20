@@ -214,11 +214,15 @@ Pedido: que Jev sea **complementario** y que haya un control parecido a la tempe
 - Pruebas automáticas que simulan el JSON de entrada de cada hook; cada hook responde en menos de 100 ms.
 - Instalación en un comando, `fiel doctor` en verde, sin API key.
 
-## 10. Demo de 60 segundos
+## 10. Demo de 60 segundos (guion, 20 nov)
 
-1. `fiel analyze` y `fiel report` sobre sesiones reales: "en tus últimas N sesiones la regla X se violó K veces (con evidencia); la regla Y nunca vino al caso y ocupa Z tokens acumulados; 2 reglas se perdieron al compactar".
-2. Repo de ejemplo con `AGENTS.md` largo y una regla crítica enterrada: sin Fiel el agente la viola; Fiel la detecta y la fija; en la siguiente corrida la cumple.
-3. Cierre con `fiel report`: la tasa de cumplimiento sube.
+Repo: `~/Proyectos/fiel-demo-tienda`. Cinco sesiones reales ya en disco.
+
+1. Mostrar `AGENTS.md`: "Use `npm test` instead of `node --test`" y las otras cuatro reglas verificables.
+2. Correr `node bin/fiel.mjs analyze ~/Proyectos/fiel-demo-tienda`.
+3. Leer la tabla: 5 sesiones analizadas, exposición `git (commit 7d1c894)`, 1 violación.
+4. Abrir la evidencia: `[AGENTS.md:15] sesión c63d84da · Shell node --test test/cart.test.mjs`.
+5. Cierre: "una sola violación, con el comando exacto; las otras reglas se cumplieron o se cumplieron por equivalente (`npm run check` → lint + test). Precisión 1.0, recall 1.0 en esta corrida."
 
 ## 11. Qué falta verificar (en este orden) y riesgos
 
@@ -264,6 +268,10 @@ Decisión: Fiel es una CLI real, no una demo. Precisión y transparencia por enc
 Resultado sobre datos reales: de 30 sesiones solo 5 se pueden juzgar (Pymesolve, reglas en git; sus sesiones están bajo la ruta vieja `scaffold-stellar-agentic`, verificado: 230 de 230 rutas editadas existen en Pymesolve). Violaciones confirmadas a mano: 2 ediciones a `app-lib/clients/index.ts` (verdaderos positivos). La primera versión marcaba 4 violaciones de "verifica cada paso" que eran `npx tsc` en lugar de `npm run typecheck`; se corrigió con equivalencias visibles.
 
 Huecos detectados en reglas reales (no son ninguno de los 4 tipos): comando prohibido ("never run `npm audit fix --force`"), lectura prohibida ("la carpeta `Secretos` no se lista") y lectura obligatoria ("SIEMPRE abre la skill …").
+
+## 11d. Mini repo trampa (20 nov)
+
+`~/Proyectos/fiel-demo-tienda`, reglas en git fechadas el 19 nov. `cursor-agent -p` no se pudo usar: el CLI pide `agent login`. Las 5 sesiones se corrieron como Task subagents de Cursor (`composer-2.5-fast`); el JSONL es el mismo formato. Transcripts de regresión en `test/fixtures/demo-tienda/`.
 
 ## 12. Referencias
 - Hackathon: https://www.trydojo.io/hackathons/dojo-ai-hack

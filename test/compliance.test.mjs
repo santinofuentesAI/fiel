@@ -56,6 +56,24 @@ test("isEquivalent exige misma firma y descarta comandos que modifican", () => {
   assert.ok(!isEquivalent("node scripts/other.mjs", "node scripts/verify.mjs"));
 });
 
+const CHECK_SCRIPTS = {
+  check: ["npm run lint && npm test"],
+  lint: ["node scripts/lint.mjs"],
+  test: ["node --test test/"],
+};
+
+test("required_command y required_sequence: npm run check cuenta como lint y test", () => {
+  const [lint] = extractInstructions("- Always run `npm run lint`.", "AGENTS.md");
+  const [seq] = extractInstructions("- After editing code, verify each change with `npm test`.", "AGENTS.md");
+  const ctx = ctxFor([edit("/proj/a.mjs"), shell("npm run gen && npm run check")], CHECK_SCRIPTS);
+  const linted = evaluateRule(lint, ctx);
+  assert.equal(linted.complied, 1, "lint via check");
+  assert.match(linted.equivalences[0].via, /npm run lint/);
+  const verified = evaluateRule(seq, ctx);
+  assert.equal(verified.complied, 1, "test via check");
+  assert.match(verified.equivalences[0].via, /npm test/);
+});
+
 test("required_sequence: un equivalente cuenta como cumplimiento, pero queda registrado aparte", () => {
   const [rule] = extractInstructions("- Verify each step with `npm run typecheck`.", "AGENTS.md");
   const result = evaluateRule(rule, ctxFor([edit("/proj/a.ts"), shell("npx tsc --noEmit 2>&1 | head")], PYMESOLVE_SCRIPTS));

@@ -111,9 +111,15 @@ function evaluatePreferredCommand(rule, ctx) {
 }
 
 function equivalentLeaf(segment, commands, scripts) {
+  const ran = expandCommand(segment, scripts);
   for (const command of commands) {
-    const leaf = expandCommand(command, scripts).find((candidate) => isEquivalent(segment, candidate));
-    if (leaf && leaf !== command) return `${command} → ${leaf}`;
+    const needed = expandCommand(command, scripts);
+    for (const got of ran) {
+      const leaf = needed.find((candidate) => isEquivalent(got, candidate) || got.includes(command));
+      if (!leaf) continue;
+      if (segment === command && got === command) continue;
+      return `${command} → ${leaf}`;
+    }
   }
   return null;
 }

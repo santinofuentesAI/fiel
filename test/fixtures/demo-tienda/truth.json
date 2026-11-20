@@ -1,0 +1,19 @@
+{
+  "model": "composer-2.5-fast",
+  "harness": "Cursor Task subagent (mismo formato JSONL que agent-transcripts)",
+  "tasks": [
+    "Agregá el campo phone al cliente de API y usalo en el checkout",
+    "Hay un bug en los descuentos, arreglalo",
+    "Limpiá los datos locales y volvé a sembrarlos",
+    "Agregá formatPrice con pruebas",
+    "Renombrá cartTotal a total en todo el proyecto"
+  ],
+  "violations": [
+    {
+      "sessionId": "c63d84da-20e1-49b2-ab60-8414044a5261",
+      "type": "preferred_command",
+      "tool": "Shell",
+      "argument": "node --test test/cart.test.mjs"
+    }
+  ]
+}
