@@ -81,7 +81,7 @@ export async function doctor({
       name: "instalación",
       required: false,
       ok: false,
-      detail: "Held corre desde la caché de npx: si instalas hooks así, se rompen cuando npm limpie la caché. Usa `npm i -g --allow-git=all github:santinofuentesAI/held`.",
+      detail: "Held corre desde la caché de npx: si instalas hooks así, se rompen cuando npm limpie la caché. Usa `npm i -g held-cli`.",
     });
   }
 

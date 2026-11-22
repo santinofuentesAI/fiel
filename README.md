@@ -1,3 +1,17 @@
+<p align="center">
+  <img src="docs/hero.jpg" alt="Held: caja negra de las sesiones de tu agente de código" width="920">
+</p>
+
+<p align="center">
+  <a href="https://www.npmjs.com/package/held-cli"><img src="https://img.shields.io/npm/v/held-cli.svg?color=b8860b" alt="npm held-cli"></a>
+  <img src="https://img.shields.io/badge/node-%3E%3D20-2ea44f" alt="Node 20+">
+  <img src="https://img.shields.io/badge/tests-100-2ea44f" alt="100 tests">
+  <img src="https://img.shields.io/badge/deps-0-lightgrey" alt="cero dependencias">
+  <img src="https://img.shields.io/badge/license-MIT-blue" alt="MIT">
+</p>
+
+<p align="center"><strong>13 → 2 violaciones</strong> · mismo modelo, mismas 5 tareas · <strong>70 tokens</strong> inyectados · precisión y recall 1,0</p>
+
 # Held
 
 > **Le escribes reglas a tu agente. Held te dice si las cumplió, con pruebas, y hace que no las olvide.**
@@ -19,10 +33,10 @@ Sin API key, sin servidor, sin dependencias (Node 20+). Tus transcripts no salen
 ## Pruébalo en 30 segundos
 
 ```bash
-npx -y --allow-git=all github:santinofuentesAI/held demo
+npx -y held-cli demo
 ```
 
-`--allow-git=all` hace falta desde npm 12, que bloquea por defecto los paquetes que vienen de git; npm 10 y 11 solo avisan que no conocen la opción. La demo no necesita tu historial. Crea un repo de ejemplo en una carpeta temporal, con 5 sesiones reales de Cursor y 1 sesión de Claude Code escrita a mano. Lo analiza, aplica las propuestas y simula los hooks. Salida real (recortada):
+La demo no necesita tu historial. Crea un repo de ejemplo en una carpeta temporal, con 5 sesiones reales de Cursor y 1 sesión de Claude Code escrita a mano. Lo analiza, aplica las propuestas y simula los hooks. Salida real (recortada):
 
 ```text
 Sesiones: 6 (cursor 5, claude 1), analizadas 6
@@ -44,15 +58,15 @@ Keep these instructions the user wrote in this chat verbatim in the summary:
 ## Instalación
 
 ```bash
-npm install -g --allow-git=all github:santinofuentesAI/held
+npm install -g held-cli
 held doctor        # revisa Node, sesiones de Cursor y Claude Code, reglas, git y Jev
 held onboard       # mide, aplica los pins seguros e instala los hooks en la carpeta actual
 held report        # después: qué cambió desde la última corrida
 ```
 
-Los bins son `held` (principal) y `fiel` (alias con aviso, del nombre anterior). Las URLs viejas `santinofuentesAI/fiel` redirigen a `santinofuentesAI/held`.
+El paquete en npm es `held-cli` (`held` ya estaba tomado). El comando es `held`. `fiel` queda como alias con aviso, del nombre anterior. Las URLs `santinofuentesAI/fiel` redirigen a `santinofuentesAI/held`.
 
-O sin instalar: `git clone https://github.com/santinofuentesAI/held && cd held && node bin/held.mjs demo`.
+Sin npm: `npx -y --allow-git=all github:santinofuentesAI/held demo` (npm 12 pide `--allow-git=all`; 10 y 11 solo avisan) o `git clone https://github.com/santinofuentesAI/held && cd held && node bin/held.mjs demo`.
 
 Held busca las sesiones en `~/.cursor/projects/` y `~/.claude/projects/`. Variables útiles:
 
@@ -257,6 +271,7 @@ src/effects.mjs            antes/después de cada pin aplicado
 src/judges/                jev.mjs (cliente HTTP), gate.mjs (compuerta), judge.mjs, gate-cases.json
 examples/demo-tienda/      repo de la demo con su hoja de verdad
 examples/pin-experiment/   10 sesiones del experimento controlado (control y con Held)
+docs/                      hero, icono y medición de la compuerta de Jev
 test/                      node:test, 100 pruebas (incluye E2E por CLI y el experimento), sin red ni Jev
 ```
 
