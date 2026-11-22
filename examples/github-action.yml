@@ -1,0 +1,21 @@
+# Copia este archivo a .github/workflows/held.yml en tu repo.
+# Held lee transcripts locales de Cursor y Claude Code; en CI no existen,
+# así que este workflow corre en un runner self-hosted (tu máquina) o
+# apuntando --sessions-from a una carpeta con transcripts versionados.
+name: held
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  adherence:
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Held reconstruye la versión de AGENTS.md por fecha con git log
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npx -y --allow-git=all github:santinofuentesAI/held report --fail-on-violations --fail-on-compaction-lost --no-write

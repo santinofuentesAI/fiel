@@ -12,6 +12,7 @@ export const cyan = paint(36);
 export const ref = (rule) => `[${rule.sourceFile}:${rule.lineNumber}]`;
 export const shortId = (id) => String(id).slice(0, 8);
 export const truncate = (text, max) => (text.length > max ? `${text.slice(0, max - 1)}…` : text);
+const MAX_SESSIONS_SHOWN = 10;
 const sessionsLabel = (count) => `${count} ${count === 1 ? "sesión" : "sesiones"}`;
 const pct = (value) => (value === null || value === undefined ? "—" : `${Math.round(value * 100)}%`);
 
@@ -60,11 +61,20 @@ function printSessions(project, lines) {
   lines.push(
     `  Sesiones: ${project.sessions.length} (${harnessCounts(project.sessions)}), analizadas ${analyzed.length}${ongoingText}${skipText}`,
   );
-  for (const session of project.sessions) {
+  const shown = project.sessions.slice(-MAX_SESSIONS_SHOWN);
+  if (shown.length < project.sessions.length) {
+    lines.push(dim(`    … ${project.sessions.length - shown.length} más antiguas (lista completa: \`held sessions\`)`));
+  }
+  for (const session of shown) {
     const date = session.start ? new Date(session.start).toISOString().slice(0, 16).replace("T", " ") : "sin fecha";
     const exposure = (session.exposure ?? []).map((item) => `${item.file}=${item.status}`).join("; ");
     const mark = session.status === "analyzed" ? green("analizada") : yellow(`omitida: ${session.reason}`);
     lines.push(dim(`    ${shortId(session.sessionId)} ${session.harness} ${date} UTC ${mark}${exposure ? ` · ${exposure}` : ""}`));
+  }
+  for (const hint of project.exposureHints ?? []) {
+    const why = `${sessionsLabel(hint.sessions)} sin juzgar porque no se sabe qué versión de ${hint.file} veían (${hint.reasons.join("; ")})`;
+    lines.push(yellow(`  ${why}.`));
+    if (hint.fix) lines.push(dim(`    → ${hint.fix}. Las sesiones pasadas siguen sin juzgarse; las siguientes sí.`));
   }
 }
 
@@ -177,18 +187,28 @@ export function formatCompactionDelta(compaction) {
   return lines.join("\n");
 }
 
-function violationCount(project) {
+export function violationCount(project) {
   return project.rules.reduce((sum, rule) => sum + rule.violations.length, 0);
 }
 
+const ACTION_TEXT = {
+  onboard: "`held onboard` para que lo que pides en el chat sobreviva a la compactación",
+  suggest: "`held suggest --save` y `held apply <id>` para recordarle al agente las reglas que rompió",
+  commit_rules: "versiona tus archivos de reglas en git para que Held pueda juzgar las sesiones",
+};
+
+export function recommendedActions(project) {
+  const actions = [];
+  if ((project.compaction?.lost?.length ?? 0) > 0) actions.push("onboard");
+  if (violationCount(project) > 0) actions.push("suggest");
+  if ((project.exposureHints ?? []).some((hint) => hint.fix)) actions.push("commit_rules");
+  return actions;
+}
+
 export function formatActionSummary(project) {
-  const violations = violationCount(project);
-  const lost = project.compaction?.lost?.length ?? 0;
-  const parts = [];
-  if (lost > 0) parts.push(bold("`held onboard`") + " para memoria del chat");
-  if (violations > 0) parts.push(bold("`held suggest --save`") + " + apply para reglas");
-  if (parts.length === 0) return "";
-  return yellow(`  Acción recomendada: ${parts.join("; ")}.`);
+  const actions = recommendedActions(project);
+  if (actions.length === 0) return "";
+  return yellow(`  Acción recomendada: ${actions.map((action) => ACTION_TEXT[action]).join("; ")}.`);
 }
 
 export function formatProject(project, { delta = null } = {}) {
@@ -262,7 +282,8 @@ export function formatSuggestions(suggestions) {
   if (suggestions.length === 0) return "Nada que proponer: no hubo violaciones ni instrucciones perdidas al compactar.";
   const lines = [bold(`Propuestas (${suggestions.length})`), ""];
   for (const item of suggestions) {
-    lines.push(`${item.id}  ${item.kind} @ ${item.trigger}${item.glob ? ` (${item.glob})` : ""}`);
+    const review = item.review ? yellow(" (revísala: onboard no la aplica sola)") : "";
+    lines.push(`${item.id}  ${item.kind} @ ${item.trigger}${item.glob ? ` (${item.glob})` : ""}${review}`);
     lines.push(dim(`    ${item.fact}`));
   }
   lines.push(

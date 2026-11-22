@@ -16,7 +16,7 @@ Sin API key, sin servidor, sin dependencias (Node 20+). Tus transcripts no salen
 ## Pruébalo en 30 segundos
 
 ```bash
-npx -y --allow-git=all github:santinofuentesAI/fiel demo
+npx -y --allow-git=all github:santinofuentesAI/held demo
 ```
 
 `--allow-git=all` hace falta desde npm 12, que bloquea por defecto los paquetes que vienen de git; npm 10 y 11 solo avisan que no conocen la opción. La demo no necesita tu historial. Crea un repo de ejemplo en una carpeta temporal, con 5 sesiones reales de Cursor y 1 sesión de Claude Code escrita a mano. Lo analiza, aplica las propuestas y simula los hooks. Salida real (recortada):
@@ -41,14 +41,15 @@ Keep these instructions the user wrote in this chat verbatim in the summary:
 ## Instalación
 
 ```bash
-npm install -g --allow-git=all github:santinofuentesAI/fiel
+npm install -g --allow-git=all github:santinofuentesAI/held
 held doctor        # revisa Node, sesiones de Cursor y Claude Code, reglas, git y Jev
-held analyze       # el proyecto de la carpeta actual
+held onboard       # mide, aplica los pins seguros e instala los hooks en la carpeta actual
+held report        # después: qué cambió desde la última corrida
 ```
 
-El paquete npm se llama **held**; el repo en GitHub sigue en `santinofuentesAI/fiel` hasta que renombres el remote. Los bins son `held` (principal) y `fiel` (alias con aviso).
+Los bins son `held` (principal) y `fiel` (alias con aviso, del nombre anterior). Las URLs viejas `santinofuentesAI/fiel` redirigen a `santinofuentesAI/held`.
 
-O sin instalar: `git clone https://github.com/santinofuentesAI/fiel && cd fiel && node bin/held.mjs demo`.
+O sin instalar: `git clone https://github.com/santinofuentesAI/held && cd held && node bin/held.mjs demo`.
 
 Held busca las sesiones en `~/.cursor/projects/` y `~/.claude/projects/`. Variables útiles:
 
@@ -85,7 +86,9 @@ Opciones: `--json`, `--fail-on-violations` / `--fail-on-compaction-lost` (CI), `
 held report --fail-on-violations --fail-on-compaction-lost --no-write
 ```
 
-`report` compara con `.held/last-run.json` (violaciones + pérdidas en compactación). La primera corrida con `--write` crea la baseline.
+`report` compara con `.held/last-run.json` (violaciones + pérdidas en compactación). La primera corrida sin `--no-write` crea la baseline. Con `--json`, cada proyecto trae `recommendedActions` (`onboard`, `suggest`, `commit_rules`) y `exposureHints` (por qué se omitieron sesiones y qué cambiar).
+
+Los transcripts viven en tu máquina, así que el workflow de ejemplo [`examples/github-action.yml`](examples/github-action.yml) corre en un runner self-hosted.
 
 ### Seguridad (hooks y `.held/`)
 

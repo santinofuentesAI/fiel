@@ -1,6 +1,6 @@
 {
   "name": "held",
-  "version": "0.4.2",
+  "version": "0.5.0",
   "description": "CLI Held: mide si tu agente cumplió AGENTS.md/CLAUDE.md en sesiones reales y si lo del chat sobrevivió a la compactación.",
   "type": "module",
   "bin": {
@@ -17,11 +17,11 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/santinofuentesAI/fiel.git"
+    "url": "git+https://github.com/santinofuentesAI/held.git"
   },
-  "homepage": "https://github.com/santinofuentesAI/fiel#readme",
+  "homepage": "https://github.com/santinofuentesAI/held#readme",
   "bugs": {
-    "url": "https://github.com/santinofuentesAI/fiel/issues"
+    "url": "https://github.com/santinofuentesAI/held/issues"
   },
   "keywords": [
     "cli",

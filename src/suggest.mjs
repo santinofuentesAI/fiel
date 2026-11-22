@@ -105,7 +105,7 @@ export function suggestFromAnalysis(project, { now = new Date() } = {}) {
       now,
     });
     if (!seen.has(pin.id)) {
-      suggestions.push(pin);
+      suggestions.push({ ...pin, review: true });
       seen.add(pin.id);
     }
   }

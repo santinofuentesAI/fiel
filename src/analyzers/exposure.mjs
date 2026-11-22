@@ -39,6 +39,34 @@ export function isGitRepo(projectDir) {
   return git(projectDir, ["rev-parse", "--is-inside-work-tree"])?.trim() === "true";
 }
 
+export function isGitIgnored(projectDir, file) {
+  return git(projectDir, ["check-ignore", "-q", "--", file]) !== null;
+}
+
+// Why sessions were skipped for unknown exposure, per rule file, with the one
+// change that lets future runs judge them.
+export function exposureHints(projectDir, sessions, { gitRepo = isGitRepo(projectDir) } = {}) {
+  const byFile = new Map();
+  for (const session of sessions) {
+    if (session.status !== "skipped") continue;
+    for (const item of session.exposure ?? []) {
+      if (item.status !== "unknown") continue;
+      const entry = byFile.get(item.file) ?? { file: item.file, sessions: 0, reasons: new Set() };
+      entry.sessions += 1;
+      entry.reasons.add(item.reason);
+      byFile.set(item.file, entry);
+    }
+  }
+  return [...byFile.values()].map(({ file, sessions: count, reasons }) => {
+    let fix;
+    if (!gitRepo) fix = `inicializa git y commitea ${file}`;
+    else if (isGitIgnored(projectDir, file)) fix = `${file} está en .gitignore: sácalo de ahí y commitéalo`;
+    else if (reasons.has("versionado en git, pero sin commits anteriores a la sesión")) fix = null;
+    else fix = `commitea ${file} cada vez que lo cambies`;
+    return { file, sessions: count, reasons: [...reasons], fix };
+  });
+}
+
 function gitExposure(projectDir, file, date) {
   const everCommitted = git(projectDir, ["log", "-n", "1", "--format=%H", "--", file])?.trim();
   if (!everCommitted) return null;

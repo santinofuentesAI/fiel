@@ -3,7 +3,7 @@ import { join, resolve } from "node:path";
 import { defaultCursorRoot, findCursorTranscripts, readTranscript, sessionStart } from "./readers/cursor.mjs";
 import { defaultClaudeRoot, findClaudeTranscripts, readClaudeTranscript } from "./readers/claude.mjs";
 import { encodeProjectKey, resolveProjectKey } from "./readers/projects.mjs";
-import { findRuleFiles, sessionExposure } from "./analyzers/exposure.mjs";
+import { exposureHints, findRuleFiles, sessionExposure } from "./analyzers/exposure.mjs";
 import { extractInstructions } from "./analyzers/extractor.mjs";
 import { analyzeSessions } from "./analyzers/compliance.mjs";
 import { loadScripts } from "./analyzers/scripts.mjs";
@@ -60,7 +60,13 @@ export function analyzeProject({ projectDir, sessionRoot = projectDir, transcrip
     now,
     exposureFor: (date) => sessionExposure(projectDir, ruleFiles, date),
   });
-  return { ...result, currentRules, compaction: compactionReport(sessions), loadedSessions: sessions };
+  return {
+    ...result,
+    currentRules,
+    compaction: compactionReport(sessions),
+    exposureHints: exposureHints(projectDir, result.sessions),
+    loadedSessions: sessions,
+  };
 }
 
 function isDirectory(path) {

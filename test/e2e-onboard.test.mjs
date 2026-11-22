@@ -39,3 +39,14 @@ test("onboard dry-run no escribe automations ni pins", () => {
     rmSync(demo.base, { recursive: true, force: true });
   }
 });
+test("onboard no aplica sola una propuesta marcada para revisar", () => {
+  const demo = prepareDemo();
+  try {
+    const result = runOnboard(demo.projectDir, { cursorRoot: demo.cursorRoot, claudeRoot: demo.claudeRoot, install: false });
+    assert.ok(result.applied.every((item) => !item.review));
+    const store = loadAutomations(demo.projectDir);
+    for (const item of store.automations.filter((automation) => automation.review)) assert.equal(item.status, "proposed");
+  } finally {
+    rmSync(demo.base, { recursive: true, force: true });
+  }
+});

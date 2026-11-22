@@ -24,8 +24,10 @@ import {
   formatSessionsList,
   formatSuggestions,
   green,
+  recommendedActions,
   shortId,
   truncate,
+  violationCount,
   yellow,
 } from "./format.mjs";
 
@@ -47,12 +49,10 @@ function projectJson(project) {
     compaction: project.compaction
       ? { ...project.compaction, unanchored: (project.compaction.unanchored ?? []).map(({ summary, ...item }) => item) }
       : null,
+    exposureHints: project.exposureHints ?? [],
+    recommendedActions: recommendedActions(project),
     judged: project.judged ?? null,
   };
-}
-
-function violationCount(project) {
-  return project.rules.reduce((sum, rule) => sum + rule.violations.length, 0);
 }
 
 function reportJson(result, { version, writtenFile = null, extra = {} }) {
@@ -249,6 +249,7 @@ export async function onboardCommand(options, { version }) {
       writtenFile: result.writtenFile,
       violations: result.violations,
       compaction: result.compaction,
+      exposureHints: result.exposureHints,
       applied: result.applied.map((item) => ({ id: item.id, trigger: item.trigger, kind: item.kind })),
       hooks: result.hookResults.map((item) => ({ harness: item.harness, file: item.file })),
     });
@@ -260,7 +261,11 @@ export async function onboardCommand(options, { version }) {
   out(
     `Compactación (memoria del chat): ${lost > 0 ? yellow(`${lost} instrucciones perdidas en resumen`) : green("ninguna perdida medible")}`,
   );
-  out(`Pins aplicados: ${result.applied.filter((item) => item.kind === "pin").length}`);
+  out(`${options.dryRun ? "Pins que aplicaría" : "Pins aplicados"}: ${result.applied.length}`);
+  for (const hint of result.exposureHints) {
+    out(yellow(`${hint.sessions} sesiones sin juzgar: no se sabe qué versión de ${hint.file} veían.`));
+    if (hint.fix) out(dim(`  → ${hint.fix}.`));
+  }
   if (!options.dryRun && result.hookResults.length > 0) {
     out(green("Hooks instalados en Cursor y Claude Code."));
     out(dim("PreCompact pedirá conservar tokens exactos; tras compactar, SessionStart/postToolUse reinyecta hechos + tus instrucciones."));
@@ -284,7 +289,7 @@ export async function demoCommand(options, { version }) {
   const project = result.projects[0];
   const suggestions = suggestFromAnalysis(project);
   const store = mergeSuggestions(loadAutomations(demo.projectDir), suggestions);
-  for (const item of store.automations.filter((automation) => automation.kind === "pin")) applySuggestion(store, item);
+  for (const item of store.automations.filter((automation) => automation.kind === "pin" && !automation.review)) applySuggestion(store, item);
   saveAutomations(demo.projectDir, store);
 
   const conversation = { session_id: "demo", cwd: demo.projectDir };

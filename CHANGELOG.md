@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.5.0 (22 nov 2026)
+
+Probado contra sesiones reales de Cursor (37 sesiones del workspace del hackathon y el repo trampa):
+
+- **Diagnóstico de exposición**: si se omiten sesiones porque no se sabe qué versión de las reglas veían, Held dice por qué y qué cambiar (p. ej. `AGENTS.md` está en `.gitignore`). En texto, JSON (`exposureHints`) y `onboard`.
+- **`recommendedActions`** en `--json` (`onboard`, `suggest`, `commit_rules`) para CI y agentes.
+- Las instrucciones del chat sin ancla (fragmentos como "Fuentes que no uses como cifra") quedan como propuesta **a revisar**: `onboard` y `demo` ya no las aplican solas, para no meter ruido tras cada compactación.
+- La lista de sesiones en `analyze`/`report` muestra las 10 más recientes; el resto en `held sessions`.
+- `onboard --dry-run` dice "Pins que aplicaría".
+- Workflow de ejemplo `examples/github-action.yml`; URLs apuntan a `santinofuentesAI/held`.
+
 ## 0.4.2 (22 nov 2026)
 
 - `held report`: delta de memoria del chat (pérdidas en compactación) junto al delta de violaciones.

@@ -39,3 +39,13 @@ test("apply y undo cambian solo el estado; merge no duplica", () => {
   assert.equal(undoAutomation(store, store.automations[0].id, { now }).status, "undone");
   assert.equal(undoAutomation(store, "nope", { now }), null);
 });
+
+test("instrucciones del chat sin ancla quedan como propuesta a revisar", () => {
+  const project = {
+    rules: [],
+    compaction: { lost: [], unanchored: [{ id: "u1", sessionId: "sess-123456789", harness: "cursor", text: "Sé breve siempre." }] },
+  };
+  const [item] = suggestFromAnalysis(project, { now });
+  assert.equal(item.trigger, "after_compact");
+  assert.equal(item.review, true);
+});

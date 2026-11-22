@@ -36,7 +36,7 @@ export function runOnboard(
   const store = mergeSuggestions(loadAutomations(dir), suggestions);
   const applied = [];
   for (const item of suggestions) {
-    if (item.kind !== "pin") continue;
+    if (item.kind !== "pin" || item.review) continue;
     if (!dryRun) applySuggestion(store, item, { now });
     applied.push(item);
   }
@@ -54,6 +54,7 @@ export function runOnboard(
     hooksBefore,
     hookResults,
     compaction: project.compaction,
+    exposureHints: project.exposureHints ?? [],
     violations: project.rules.reduce((sum, rule) => sum + rule.violations.length, 0),
   };
 }

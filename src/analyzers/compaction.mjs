@@ -36,7 +36,6 @@ export function anchorInSummary(anchor, summary) {
   const raw = anchor.toLowerCase().trim();
   if (raw.length < 3) return false;
   if (summaryNorm.includes(raw)) return true;
-  if (raw.includes(" ") && summaryNorm.includes(raw)) return true;
   const base = raw.split(/[/\\]/).pop();
   if (base && base.length >= 6 && summaryNorm.includes(base)) return true;
   return false;

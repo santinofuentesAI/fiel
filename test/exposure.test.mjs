@@ -4,7 +4,7 @@ import { execFileSync } from "node:child_process";
 import { mkdirSync, mkdtempSync, utimesSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { exposureAt, findRuleFiles, sessionExposure } from "../src/analyzers/exposure.mjs";
+import { exposureAt, exposureHints, findRuleFiles, sessionExposure } from "../src/analyzers/exposure.mjs";
 
 function tempDir() {
   return mkdtempSync(join(tmpdir(), "fiel-exposure-"));
@@ -98,4 +98,29 @@ test("repo git con archivo sin versionar cae al mtime", () => {
   utimesSync(file, mtime, mtime);
   const [result] = sessionExposure(dir, ["AGENTS.md"], new Date("2026-10-06T00:00:00Z"));
   assert.equal(result.status, "disk");
+});
+
+const skippedUnknown = (file, reason) => ({ status: "skipped", exposure: [{ file, status: "unknown", reason }] });
+
+test("exposureHints: AGENTS.md en .gitignore dice que lo saque de ahí", () => {
+  const dir = gitRepo();
+  writeFileSync(join(dir, ".gitignore"), "/AGENTS.md\n");
+  writeFileSync(join(dir, "AGENTS.md"), "x");
+  const reason = "sin historial git y modificado después de la sesión";
+  const hints = exposureHints(dir, [skippedUnknown("AGENTS.md", reason), skippedUnknown("AGENTS.md", reason), { status: "analyzed", exposure: [] }]);
+  assert.equal(hints.length, 1);
+  assert.equal(hints[0].sessions, 2);
+  assert.match(hints[0].fix, /\.gitignore/);
+});
+
+test("exposureHints: sesiones anteriores al primer commit no tienen arreglo", () => {
+  const dir = gitRepo();
+  const hints = exposureHints(dir, [skippedUnknown("AGENTS.md", "versionado en git, pero sin commits anteriores a la sesión")]);
+  assert.equal(hints[0].fix, null);
+});
+
+test("exposureHints: sin git pide inicializarlo", () => {
+  const dir = tempDir();
+  const hints = exposureHints(dir, [skippedUnknown("CLAUDE.md", "sin historial git y modificado después de la sesión")]);
+  assert.match(hints[0].fix, /inicializa git/);
 });
