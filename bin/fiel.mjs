@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { readFileSync } from "node:fs";
 import { analyzeAll, analyzePath, FielError } from "../src/analyze.mjs";
+import { doctor, formatDoctor } from "../src/doctor.mjs";
 import { DEFINITIONS } from "../src/analyzers/compliance.mjs";
 import { writeInstructions } from "../src/analyzers/extractor.mjs";
 
@@ -11,6 +12,7 @@ const HELP = `fiel ${version}: mide si tu agente cumple las instrucciones que le
 Uso:
   fiel analyze [ruta]            Analiza el proyecto en [ruta] (por defecto, la carpeta actual)
   fiel analyze --all             Analiza todos los proyectos con sesiones de Cursor en disco
+  fiel doctor                    Comprueba Node, transcripts de Cursor y archivos de reglas
 
 Opciones:
   --json                         Salida estructurada en JSON
@@ -197,6 +199,12 @@ function run(argv) {
   const options = parseArgs(argv);
   if (options.version) return console.log(version);
   if (options.help || !options.command) return console.log(HELP);
+  if (options.command === "doctor") {
+    const report = doctor();
+    console.log(formatDoctor(report));
+    if (!report.ok) process.exitCode = 1;
+    return;
+  }
   if (options.command !== "analyze") throw new FielError(`Comando desconocido: ${options.command}. Usa "fiel --help".`);
   if (options.all && options.path) throw new FielError("Usa una ruta o --all, no ambas.");
 
@@ -222,7 +230,6 @@ function run(argv) {
 
 try {
   run(process.argv.slice(2));
-  process.exitCode = 0;
 } catch (error) {
   const message = error instanceof FielError ? error.message : `error inesperado: ${error.stack ?? error}`;
   console.error(`fiel: ${message}`);

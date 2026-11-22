@@ -1,11 +1,28 @@
 {
   "name": "fiel",
   "version": "0.1.0",
-  "description": "Mide si tu agente sigue las instrucciones de AGENTS.md y CLAUDE.md en sesiones reales, y actúa sobre lo medido.",
+  "description": "CLI que mide si tu agente de Cursor cumplió las reglas de AGENTS.md y CLAUDE.md en sesiones reales.",
   "type": "module",
   "bin": {
     "fiel": "./bin/fiel.mjs"
   },
+  "files": [
+    "bin",
+    "src",
+    "README.md",
+    "LICENSE"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/santinofuentesAI/fiel"
+  },
+  "keywords": [
+    "cli",
+    "cursor",
+    "agents",
+    "agents.md",
+    "context"
+  ],
   "scripts": {
     "test": "node --test test/"
   },

@@ -2,33 +2,35 @@
 
 > **Tu agente no necesita más contexto. Necesita el correcto, y saber si lo está usando.**
 
-Hoy escribes un `AGENTS.md`, pegas recordatorios en cada prompt y no tienes cómo saber si sirvieron. Fiel lee las sesiones que ya tienes en disco y te dice, con evidencia, qué reglas tu agente cumplió, cuáles ignoró, cuáles se perdieron al compactar y cuáles te cuestan tokens en cada turno sin venir al caso. Después arma el contexto que sí le sirve a **tu** proyecto y lo mejora con cada sesión.
+## Qué es (y qué no es)
 
-El contexto deja de ser algo que adivinas y pasa a ser algo que se mide.
+Fiel es una **CLI de desarrollador**. Un binario `fiel` que corre en tu máquina, lee las sesiones de Cursor que ya tienes en disco y te dice, con evidencia, si el agente hizo caso a `AGENTS.md`, `CLAUDE.md` y `.cursor/rules/`.
 
-## Qué mide
+| Esto | Fiel |
+|---|---|
+| Skill (`SKILL.md` que el agente lee) | No. Eso es un archivo de instrucciones. Fiel las **mide**, no las sustituye. |
+| Kit de prompts / reglas | No. No te vende un paquete de AGENTS.md. |
+| MCP o plugin | No. No se instala dentro del chat. |
+| **CLI** (`npm i -g` → `fiel analyze`) | **Sí. Eso es el producto.** |
 
-1. **¿Qué reglas se cumplen y cuáles se violan?** Con la llamada exacta como evidencia.
-2. **¿Cuáles se perdieron al compactar la conversación?**
-3. **¿Cuáles nunca vinieron al caso** pero ocupan tokens en cada turno de cada sesión?
-4. **¿Qué conviene fijar, afinar o podar?** Y lo aplica en un segundo, solo dentro de `.fiel/`; nunca toca tu `AGENTS.md`.
+Hoy escribes reglas, pegas recordatorios y no tienes cómo saber si sirvieron. Fiel cierra ese hueco: sesión, herramienta, ruta o comando exacto, origen `[AGENTS.md:42]`.
 
-## Mejora continua: automatizaciones de contexto hechas a la medida de tu proyecto
+Sin API key, sin servidor, sin dependencias. Tus transcripts no salen de la máquina.
 
-Hoy cada dev escribe a mano automatizaciones para que su agente no se salga del camino: un recordatorio pegado en cada prompt, una regla repetida, una nota que se olvida actualizar. Fiel las **genera a partir de tu proyecto y las mejora con cada sesión**:
+Lo que **aún no** hace (y no hay que venderlo como si existiera): sugerir reescrituras, hooks en vivo, ni detectar reglas perdidas al compactar.
 
-- **Qué recordarle al agente y cuándo.** Una regla que el agente ignoró, o que se perdió al compactar, se convierte en una automatización de contexto: se inyecta al empezar la sesión, tras compactar, o justo antes de que lea la ruta donde importa. Solo eso, no todo el manual.
-- **Salen de tu proyecto**, de tus propias reglas y de lo que realmente pasó en tus sesiones, no de una plantilla genérica.
-- **El ciclo se cierra: medir, proponer, aplicar, volver a medir.** `fiel report` te dice si el cumplimiento subió y cuántos tokens cuesta cada automatización. Las que no ayudan se podan; las que ayudan se afinan.
-- Todo vive en `.fiel/`, queda registrado y se puede deshacer.
+## Qué mide hoy
 
-Sin API key, sin servidor, sin cuenta, sin dependencias. Todo corre en tu máquina y tus transcripts no salen de ella.
+1. **Qué reglas se cumplen y cuáles se violan**, con la llamada exacta como evidencia.
+2. **Cuántos tokens ocupa cada instrucción** en las sesiones donde estuvo vigente (caracteres/4 × turnos del usuario).
+3. **Qué versión de las reglas vio el agente** (git por fecha; si no, mtime; si no, no juzga).
 
 ## Uso
 
 ```bash
 npm install -g github:santinofuentesAI/fiel   # o: node bin/fiel.mjs desde el repo
 
+fiel doctor                  # Node, transcripts de Cursor, reglas del cwd
 fiel analyze                 # el proyecto de la carpeta actual
 fiel analyze ~/mi-proyecto   # otro proyecto
 fiel analyze --all           # todos los proyectos con sesiones de Cursor en disco
@@ -74,11 +76,12 @@ El resto de instrucciones queda como `exposure_only`: se cuenta su costo en toke
 | Lector de transcripts de Cursor | Funciona. 30 sesiones reales leídas |
 | Exposición por fecha (git y mtime) | Funciona |
 | Extractor con origen `[archivo:línea]` y 5 patrones | Funciona |
-| `fiel analyze` (ruta, `--all`, `--json`) | Funciona. Evaluación medida abajo |
+| `fiel analyze` (ruta, `--all`, `--json`) y `fiel doctor` | Funciona. Evaluación medida abajo |
+| Transcripts de subagentes de Cursor | Se leen (antes se omitían) |
 | Reglas perdidas al compactar | Pendiente |
-| `suggest`, automatizaciones de contexto, hooks para Claude Code y Codex | Pendiente |
+| `suggest`, hooks para Claude Code y Codex | Pendiente |
 
-Límites conocidos: Cursor no guarda resultados de herramientas, así que un comando que corrió cuenta aunque haya fallado. Las ediciones hechas por subagentes no se leen todavía en `fiel analyze` de un proyecto (esta evaluación las copió a sesiones principales). Reglas sobre lecturas ("no leas Y", "abre siempre Z") aún no se verifican.
+Límites conocidos: Cursor no guarda resultados de herramientas, así que un comando que corrió cuenta aunque haya fallado. Reglas sobre lecturas ("no leas Y", "abre siempre Z") aún no se verifican. Compaction sigue fuera.
 
 ## Evaluación (5 sesiones reales, 20 nov 2026)
 

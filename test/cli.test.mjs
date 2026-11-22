@@ -67,6 +67,17 @@ test("analyze en texto muestra el origen [archivo:línea]", () => {
   assert.match(result.stdout, /\[AGENTS\.md:3\] sesión abc12345 · Write generated\/api\.ts/);
 });
 
+test("help y version salen 0", () => {
+  const { cursorRoot } = fixture();
+  const help = fiel(["--help"], cursorRoot);
+  assert.equal(help.status, 0);
+  assert.match(help.stdout, /fiel analyze/);
+  assert.match(help.stdout, /fiel doctor/);
+  const ver = fiel(["--version"], cursorRoot);
+  assert.equal(ver.status, 0);
+  assert.match(ver.stdout.trim(), /^\d+\.\d+\.\d+$/);
+});
+
 test("errores claros con código 1: sin sesiones, sin reglas, opción inválida", () => {
   const { project, cursorRoot } = fixture();
   const empty = mkdtempSync(join(tmpdir(), "fiel-empty-"));

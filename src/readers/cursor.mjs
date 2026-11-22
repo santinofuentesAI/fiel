@@ -94,7 +94,7 @@ function walk(dir, out) {
   for (const entry of entries) {
     const full = join(dir, entry.name);
     if (entry.isDirectory()) {
-      if (entry.name === "subagents" || entry.name === "compaction") continue;
+      if (entry.name === "compaction") continue;
       walk(full, out);
     } else if (entry.name.endsWith(".jsonl")) {
       out.push(full);

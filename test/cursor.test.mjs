@@ -1,6 +1,9 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { normalizeLine, extractUserText, toolFamily } from "../src/readers/cursor.mjs";
+import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { normalizeLine, extractUserText, toolFamily, findCursorTranscripts } from "../src/readers/cursor.mjs";
 
 const line = (obj) => JSON.stringify(obj);
 
@@ -54,4 +57,16 @@ test("normalizeLine guarda la fecha del mensaje del usuario", () => {
     0,
   );
   assert.equal(event.timestamp.toISOString(), "2026-11-20T16:29:00.000Z");
+});
+
+test("findCursorTranscripts incluye jsonl de subagents y omite compaction", () => {
+  const root = mkdtempSync(join(tmpdir(), "fiel-cursor-"));
+  const base = join(root, "proj", "agent-transcripts", "sess");
+  mkdirSync(join(base, "subagents"), { recursive: true });
+  mkdirSync(join(base, "compaction"), { recursive: true });
+  writeFileSync(join(base, "sess.jsonl"), "{}\n");
+  writeFileSync(join(base, "subagents", "child.jsonl"), "{}\n");
+  writeFileSync(join(base, "compaction", "ignored.jsonl"), "{}\n");
+  const found = findCursorTranscripts(root).map((item) => item.session).sort();
+  assert.deepEqual(found, ["child", "sess"]);
 });
