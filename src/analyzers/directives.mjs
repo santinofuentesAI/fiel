@@ -20,6 +20,24 @@ const HARNESS_TEMPLATES = [
   /if there's no follow-ups needed/i,
   /if you mention an agent or subagent in your response/i,
 ];
+// Sentences that carry a directive keyword but are not an order: questions,
+// habits ("I always…", "como siempre…") and past tense ("nunca usábamos…").
+const NOT_DIRECTIVE = [
+  /\?|¿/,
+  /\b(?:como|as)\s+(?:siempre|always)\b/i,
+  /\b(?:i|we|they|he|she|yo|nosotros|ellos)\s+(?:always|never|siempre|nunca)\b/i,
+  /\b(?:nunca|siempre|jam[aá]s)\s+\w+(?:[aá]bamos|aban|aba|[ií]amos|[ií]an)\b/i,
+];
+// The user lifting an earlier instruction about the same anchor.
+const REVOKE = new RegExp(
+  [
+    "\\bya\\s+(?:pod[eé]s|puedes|se puede)\\b",
+    "\\b(?:olvid[aá]|ignor[aá]|olvida|ignora)\\s+lo\\s+(?:anterior|que te dije)\\b",
+    "\\b(?:you can now|now you can|it'?s fine to|feel free to)\\b",
+    "\\b(?:ignore|forget|scratch)\\s+(?:that|what i said|my previous)\\b",
+  ].join("|"),
+  "i",
+);
 const CODE_SPAN = /`([^`]+)`/g;
 const FLAG = /(?:^|\s)(--?[a-z][\w-]+)/gi;
 const MIN_LENGTH = 8;
@@ -52,11 +70,26 @@ export function extractDirectives(text) {
   const seen = new Set();
   const out = [];
   for (const sentence of sentences(text)) {
-    if (!DIRECTIVE.test(sentence) || HARNESS_TEMPLATES.some((template) => template.test(sentence))) continue;
+    if (!DIRECTIVE.test(sentence) || REVOKE.test(sentence)) continue;
+    if (HARNESS_TEMPLATES.some((template) => template.test(sentence))) continue;
+    if (NOT_DIRECTIVE.some((pattern) => pattern.test(sentence))) continue;
     const key = sentence.toLowerCase();
     if (seen.has(key)) continue;
     seen.add(key);
     out.push({ text: sentence, anchors: anchorsOf(sentence) });
   }
   return out;
+}
+
+export function revokedAnchors(text) {
+  const anchors = new Set();
+  for (const sentence of sentences(text)) {
+    if (!REVOKE.test(sentence)) continue;
+    for (const anchor of anchorsOf(sentence)) anchors.add(anchor);
+  }
+  return anchors;
+}
+
+export function revokes(directive, revoked) {
+  return directive.anchors.some((anchor) => revoked.has(anchor));
 }

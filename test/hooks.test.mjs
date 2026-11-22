@@ -73,3 +73,13 @@ test("falla abierto: JSON inválido, evento desconocido y sin .held/", () => {
   assert.equal(runHook({ harness: "claude", event: "Stop", projectDir: dir, stdin: "{}", dryRun: true }), "");
   assert.ok(existsSync(join(dir, ".held", ".gitignore")));
 });
+
+test("hook: revocar en el chat borra la instrucción guardada y no la reinyecta", () => {
+  const { dir } = projectWithAutomations();
+  const base = { session_id: "conv-rev", cwd: dir };
+  run(dir, "claude", "UserPromptSubmit", { ...base, prompt: PROMPT });
+  run(dir, "claude", "UserPromptSubmit", { ...base, prompt: "Ya podés tocar `scripts/db-reset.mjs`." });
+  const chat = JSON.parse(readFileSync(join(dir, ".held", "chat", "conv-rev.json"), "utf8"));
+  assert.deepEqual(chat.directives, []);
+  assert.equal(run(dir, "claude", "PreCompact", { ...base, trigger: "auto" }), "");
+});

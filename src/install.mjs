@@ -71,22 +71,44 @@ export function stripClaudeHooks(settings) {
   return { ...settings, hooks };
 }
 
-const TARGETS = {
-  cursor: { file: [".cursor", "hooks.json"], empty: { version: 1, hooks: {} }, merge: mergeCursorHooks, strip: stripCursorHooks },
-  claude: { file: [".claude", "settings.json"], empty: {}, merge: mergeClaudeHooks, strip: stripClaudeHooks },
+// Claude Code hooks go to settings.local.json: the hook command holds absolute
+// paths of this machine, and Claude Code keeps that file out of git.
+// settings.json is only read to migrate hooks from Held < 0.6.
+export const TARGETS = {
+  cursor: {
+    file: [".cursor", "hooks.json"],
+    legacy: [],
+    empty: { version: 1, hooks: {} },
+    merge: mergeCursorHooks,
+    strip: stripCursorHooks,
+  },
+  claude: {
+    file: [".claude", "settings.local.json"],
+    legacy: [[".claude", "settings.json"]],
+    empty: {},
+    merge: mergeClaudeHooks,
+    strip: stripClaudeHooks,
+  },
 };
 
-function apply(projectDir, harnesses, { dryRun, transform }) {
-  return harnesses.map((harness) => {
-    const target = TARGETS[harness];
-    const file = join(projectDir, ...target.file);
-    const next = transform(target, readConfig(file, target.empty));
-    if (!dryRun) {
-      mkdirSync(dirname(file), { recursive: true });
-      writeFileSync(file, `${JSON.stringify(next, null, 2)}\n`);
-    }
-    return { harness, file, config: next, wrote: !dryRun };
-  });
+function write(file, config, dryRun) {
+  if (dryRun) return;
+  mkdirSync(dirname(file), { recursive: true });
+  writeFileSync(file, `${JSON.stringify(config, null, 2)}\n`);
+}
+
+function stripLegacy(projectDir, target, dryRun) {
+  for (const parts of target.legacy) {
+    const file = join(projectDir, ...parts);
+    if (!existsSync(file)) continue;
+    const config = readConfig(file, target.empty);
+    const stripped = target.strip(config);
+    if (JSON.stringify(stripped) !== JSON.stringify(config)) write(file, stripped, dryRun);
+  }
+}
+
+export function isEphemeralInstall(binPath = heldBinPath()) {
+  return /[\\/]_npx[\\/]/.test(binPath);
 }
 
 export function installHooks(
@@ -94,10 +116,27 @@ export function installHooks(
   { harnesses = HARNESSES, nodePath = process.execPath, heldPath = heldBinPath(), fielPath, dryRun = false } = {},
 ) {
   const binPath = heldPath ?? fielPath ?? heldBinPath();
-  return apply(projectDir, harnesses, { dryRun, transform: (target, config) => target.merge(config, { nodePath, heldPath: binPath }) });
+  return harnesses.map((harness) => {
+    const target = TARGETS[harness];
+    const file = join(projectDir, ...target.file);
+    stripLegacy(projectDir, target, dryRun);
+    const config = target.merge(readConfig(file, target.empty), { nodePath, heldPath: binPath });
+    write(file, config, dryRun);
+    return { harness, file, config, wrote: !dryRun };
+  });
 }
 
 export function uninstallHooks(projectDir, { harnesses = HARNESSES, dryRun = false } = {}) {
-  const present = harnesses.filter((harness) => existsSync(join(projectDir, ...TARGETS[harness].file)));
-  return apply(projectDir, present, { dryRun, transform: (target, config) => target.strip(config) });
+  const results = [];
+  for (const harness of harnesses) {
+    const target = TARGETS[harness];
+    for (const parts of [target.file, ...target.legacy]) {
+      const file = join(projectDir, ...parts);
+      if (!existsSync(file)) continue;
+      const config = target.strip(readConfig(file, target.empty));
+      write(file, config, dryRun);
+      results.push({ harness, file, config, wrote: !dryRun });
+    }
+  }
+  return results;
 }

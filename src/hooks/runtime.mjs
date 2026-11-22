@@ -1,8 +1,8 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, isAbsolute, join, relative } from "node:path";
-import { extractDirectives } from "../analyzers/directives.mjs";
+import { extractDirectives, revokedAnchors, revokes } from "../analyzers/directives.mjs";
 import { pathMatcher } from "../analyzers/compliance.mjs";
-import { parseHookStdin } from "../security.mjs";
+import { parseHookStdin, redactSecrets } from "../security.mjs";
 import { appendLog, ensureHeldDir, heldDir, loadAutomations, readJson } from "../store.mjs";
 
 const MAX_FACT_CHARS = 700;
@@ -36,9 +36,12 @@ function saveChat(projectDir, conversation, chat) {
 }
 
 export function rememberDirectives(chat, prompt, now = new Date()) {
+  const revoked = revokedAnchors(prompt ?? "");
+  if (revoked.size > 0) chat.directives = chat.directives.filter((item) => !revokes({ anchors: item.anchors ?? [] }, revoked));
   for (const directive of extractDirectives(prompt ?? "")) {
-    if (!chat.directives.some((item) => item.text === directive.text)) {
-      chat.directives.push({ text: directive.text, anchors: directive.anchors, at: now.toISOString() });
+    const text = redactSecrets(directive.text);
+    if (!chat.directives.some((item) => item.text === text)) {
+      chat.directives.push({ text, anchors: directive.anchors, at: now.toISOString() });
     }
   }
   chat.directives = chat.directives.slice(-MAX_DIRECTIVES);
@@ -86,7 +89,7 @@ export function formatFacts(facts) {
 
 export function formatDirectives(directives) {
   return capped(
-    "Instrucciones que el usuario escribió en este chat antes de compactar (Held las guardó textuales):",
+    "Instrucciones que el usuario escribió en este chat antes de compactar (Held las guardó textuales; si después pidió algo distinto, vale lo más reciente):",
     directives.map((item) => `«${item.text}»`),
     MAX_DIRECTIVE_CHARS,
   );

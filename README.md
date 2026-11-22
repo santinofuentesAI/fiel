@@ -72,7 +72,7 @@ Held busca las sesiones en `~/.cursor/projects/` y `~/.claude/projects/`. Variab
 | `held onboard [ruta]` | **Un paso:** `analyze` + pins aplicados + `install` (ataque directo a pérdidas de memoria del chat) | `.held/*` y hooks |
 | `held suggest [ruta]` | Propone hechos para reinyectar a partir de lo medido | `.held/automations.json` |
 | `held apply <id>` / `held undo <id>` | Aplica o deshace una propuesta | `.held/automations.json` |
-| `held install [ruta]` | Hooks de Cursor (`.cursor/hooks.json`) y Claude Code (`.claude/settings.json`) | Esos dos archivos, sin borrar tus hooks |
+| `held install [ruta]` | Hooks de Cursor (`.cursor/hooks.json`) y Claude Code (`.claude/settings.local.json`, personal y fuera de git) | Esos dos archivos, sin borrar tus hooks |
 | `held uninstall [ruta]` | Quita solo los hooks de Held | Esos dos archivos |
 | `held jev status` / `held jev gate` | Estado del juez local y su compuerta de calidad | `~/.held/jev-gate.json` |
 | `held analyze --judge jev` | Agrega hallazgos probabilísticos, separados de los determinísticos | Igual que `analyze` |
@@ -155,9 +155,17 @@ Cuando el contexto se llena y el IDE compacta, corre **`held onboard`** en el re
 | Después de compactar | `SessionStart` con `source=compact`: las reinyecta | siguiente `postToolUse`: las reinyecta una vez |
 | Lectura de un archivo | `PostToolUse` (`Read`): hecho sobre esa ruta | `postToolUse`: igual |
 
-Cada hook usa solo los campos que su harness acepta: en Cursor, solo `sessionStart` y `postToolUse` aceptan `additional_context`. El texto inyectado dice "información, no órdenes" y tiene un tope de caracteres.
+Cada hook usa solo los campos que su harness acepta: en Cursor, solo `sessionStart` y `postToolUse` aceptan `additional_context`. El texto inyectado dice "información, no órdenes" y tiene un tope de caracteres. Cada hook tarda unos 50 ms (p50 medido, Node 26).
 
-### 5. Jev: juez opcional detrás de una compuerta medida
+- **Revocaciones:** si después escribes "ya podés tocar `X`" o "ignore that", Held borra la instrucción guardada sobre `X` y no la reinyecta. Lo reinyectado lleva el aviso "si después pidió algo distinto, vale lo más reciente".
+- **Secretos:** las instrucciones se guardan con tokens comunes redactados (`sk-…`, `ghp_…`, `xox…`).
+- **Rutas:** el comando del hook lleva rutas absolutas de tu máquina. Por eso en Claude Code va a `settings.local.json` y no a `settings.json`. Si Held corre desde la caché de `npx`, `install`, `onboard` y `doctor` avisan, porque npm borra esa caché; `doctor` también marca hooks que apuntan a archivos que ya no existen.
+
+### 5. ¿Sirvió el pin?
+
+`held report` compara cada pin aplicado con su regla: violaciones en las sesiones de antes de aplicarlo y en las de después. Si la regla se sigue rompiendo, lo dice. Es una comparación antes/después sin grupo de control: indica, no prueba.
+
+### 6. Jev: juez opcional detrás de una compuerta medida
 
 [Jev](https://github.com/feder-cr/jev) es un modelo local de CPU que responde sí o no con una probabilidad. Held lo usa solo para lo que los patrones no pueden ver: reglas `exposure_only` con forma de instrucción y frases del chat sin ancla. **No es el centro del producto y viene apagado.** Para encenderlo:
 
@@ -219,10 +227,12 @@ src/analyzers/             extractor (5 tipos), exposure (git/mtime), compliance
                            directives (instrucciones del chat), compaction
 src/suggest.mjs            propuestas → .held/automations.json
 src/hooks/runtime.mjs      lógica de los hooks de Cursor y Claude Code
-src/install.mjs            merge idempotente de .cursor/hooks.json y .claude/settings.json
+src/install.mjs            merge idempotente de .cursor/hooks.json y .claude/settings.local.json
+src/onboard.mjs            analyze + pins seguros + install en un paso
+src/effects.mjs            antes/después de cada pin aplicado
 src/judges/                jev.mjs (cliente HTTP), gate.mjs (compuerta), judge.mjs, gate-cases.json
 examples/demo-tienda/      repo de la demo con su hoja de verdad
-test/                      node:test, 70+ pruebas, sin red ni Jev
+test/                      node:test, 99 pruebas (incluye E2E por CLI), sin red ni Jev
 ```
 
 Los dos lectores producen los mismos eventos (`user_text`, `tool_use` con `family` edit/shell/read, `compact_summary`), así que el resto del pipeline no sabe de qué harness viene cada sesión.
@@ -232,7 +242,11 @@ Los dos lectores producen los mismos eventos (`user_text`, `tool_use` con `famil
 - **El soporte de Claude Code se probó con un JSONL escrito a mano** que sigue el formato público, no con sesiones reales de este equipo, que usa Cursor. El lector tolera líneas rotas y campos faltantes.
 - Cursor no guarda el resultado de las herramientas: un comando que falló cuenta como ejecutado.
 - Las reglas sobre lecturas ("no leas Y") todavía no se verifican.
-- La detección de instrucciones del chat usa patrones en español e inglés; una instrucción redactada de otra forma no se ve.
+- La detección de instrucciones del chat usa patrones en español e inglés; una instrucción redactada de otra forma no se ve. Descarta preguntas, hábitos ("como siempre…", "I always…") y pasado ("nunca usábamos…"), pero quedan fragmentos sin ancla; esos nunca se cuentan como perdidos y `onboard` no los aplica solos.
+- "Conservada" significa que el ancla (ruta, comando, archivo) aparece en el resumen, no que el resumen conserve la negación. Un resumen que diga "se editó `db-reset.mjs`" cuenta como conservada.
+- En proyectos reales, la mayoría de las reglas no tienen forma verificable (en este workspace, 1 de 21). Held lo dice en el reporte y muestra cómo reescribirlas; las demás solo se cuentan en tokens.
+- Si commiteas `AGENTS.md` después de editarlo, las sesiones intermedias se juzgan con el commit anterior.
+- El preCompact de Cursor no puede influir en su resumen: en Cursor, Held solo puede reinyectar después.
 - No hay lector de Codex.
 
 ## Cómo se usaron las herramientas de IA

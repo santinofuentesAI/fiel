@@ -219,6 +219,13 @@ export function formatProject(project, { delta = null } = {}) {
   lines.push(
     `  Instrucciones actuales: ${project.currentRules.length} (verificables ${currentVerifiable}, solo exposición ${project.currentRules.length - currentVerifiable})`,
   );
+  if (project.currentRules.length > 0 && currentVerifiable / project.currentRules.length < 0.5) {
+    lines.push(
+      dim(
+        "    Held solo juzga reglas con ruta o comando entre backticks, p. ej. «Nunca corras `rm -rf data`», «No edites `src/generated/*`», «Usa `npm test` en vez de `node --test`», «Después de editar, corre `npm test`». Las demás solo se cuentan en tokens.",
+      ),
+    );
+  }
   printSessions(project, lines);
   const action = formatActionSummary(project);
   if (action) lines.push(action);
@@ -269,11 +276,25 @@ export function formatReport(result, { version, writtenFile, deltas = null }) {
   return lines.join("\n");
 }
 
-export function formatAutomations(store) {
+const plural = (count, one, many) => `${count} ${count === 1 ? one : many}`;
+
+export function formatPinEffect(effect) {
+  const before = `antes ${plural(effect.violationsBefore, "violación", "violaciones")} en ${sessionsLabel(effect.sessionsBefore)}`;
+  if (effect.sessionsAfter === 0) return `[${effect.ref}] ${before}; sin sesiones nuevas desde que lo aplicaste`;
+  const after = `después ${plural(effect.violationsAfter, "violación", "violaciones")} en ${sessionsLabel(effect.sessionsAfter)}`;
+  const verdict = effect.violationsAfter === 0 ? green("sin reincidencia") : red("sigue pasando: revisa la regla o el hook");
+  return `[${effect.ref}] ${before} → ${after} · ${verdict}`;
+}
+
+export function formatAutomations(store, effects = []) {
   if (store.automations.length === 0) return "  Automatizaciones: ninguna. Corre `held suggest` y `held apply <id>`.";
   const lines = [`  Automatizaciones (${store.automations.length}):`];
   for (const item of store.automations) {
     lines.push(dim(`    ${item.id} ${item.status} ${item.kind} @ ${item.trigger} · ${truncate(item.fact, 72)}`));
+  }
+  if (effects.length > 0) {
+    lines.push("  Efecto de los pins aplicados (misma regla, sesiones antes y después de aplicarlo):");
+    for (const effect of effects) lines.push(`    ${formatPinEffect(effect)}`);
   }
   return lines.join("\n");
 }

@@ -87,3 +87,41 @@ test("anchorInSummary acepta ruta completa o solo archivo", () => {
 test("sin compactación devuelve null", () => {
   assert.equal(chatDirectivesAtCompact({ session: "x", harness: "claude", events: [user(0, "no toques `a.js`")] }), null);
 });
+
+test("extractDirectives descarta preguntas, hábitos y pasado aunque tengan siempre/nunca", () => {
+  for (const text of [
+    "Gracias, como siempre `npm test` me salva.",
+    "¿Siempre corrés `npm run lint` antes?",
+    "I always forget to run `npm test`.",
+    "Antes nunca usábamos `pnpm`, ahora sí.",
+    "Ya podés tocar `scripts/db-reset.mjs`, olvidá lo anterior.",
+  ]) {
+    assert.deepEqual(extractDirectives(text), [], text);
+  }
+  assert.equal(extractDirectives("Nunca corras `rm -rf data`.").length, 1);
+  assert.equal(extractDirectives("Always run `npm test` before pushing.").length, 1);
+});
+
+test("una instrucción revocada después en el chat no cuenta como perdida", () => {
+  const session = {
+    session: "s3",
+    harness: "claude",
+    events: [
+      user(0, "No toques `scripts/db-reset.mjs`."),
+      user(1, "Ya podés tocar `scripts/db-reset.mjs`."),
+      { index: 3, kind: "compact_summary", text: "Summary: refactor done." },
+    ],
+  };
+  const result = chatDirectivesAtCompact(session);
+  assert.equal(result.lost.length, 0);
+});
+
+test("los secretos en una instrucción del chat se redactan", () => {
+  const session = {
+    session: "s4",
+    harness: "claude",
+    events: [user(0, "Nunca subas `sk-abcdefghijklmnop1234` al repo."), { index: 2, kind: "compact_summary", text: "Summary." }],
+  };
+  const [item] = chatDirectivesAtCompact(session).lost;
+  assert.doesNotMatch(item.text, /sk-abcdefghijklmnop1234/);
+});

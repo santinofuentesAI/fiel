@@ -1,7 +1,7 @@
 import { resolve } from "node:path";
 import { analyzePath } from "./analyze.mjs";
 import { harnessHookStatus } from "./install-status.mjs";
-import { installHooks } from "./install.mjs";
+import { HARNESSES, installHooks } from "./install.mjs";
 import { saveLastRun } from "./history.mjs";
 import { loadAutomations, saveAutomations } from "./store.mjs";
 import { applySuggestion, mergeSuggestions, suggestFromAnalysis } from "./suggest.mjs";
@@ -42,9 +42,11 @@ export function runOnboard(
   }
   if (write && !dryRun) saveAutomations(dir, store);
   const hooksBefore = harnessHookStatus(dir);
+  const used = HARNESSES.filter((harness) => project.sessions.some((session) => session.harness === harness));
+  const targetHarnesses = harnesses ?? (used.length > 0 ? used : HARNESSES);
   let hookResults = [];
   if (install && !dryRun) {
-    hookResults = installHooks(dir, { harnesses });
+    hookResults = installHooks(dir, { harnesses: targetHarnesses });
   }
   return {
     projectDir: dir,
@@ -52,6 +54,7 @@ export function runOnboard(
     suggestions,
     applied,
     hooksBefore,
+    targetHarnesses,
     hookResults,
     compaction: project.compaction,
     exposureHints: project.exposureHints ?? [],

@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.6.0 (22 nov 2026)
+
+Antítesis de todo el funcionamiento y lo que se corrigió:
+
+- **Hooks con rutas frágiles**: Claude Code ahora va a `.claude/settings.local.json` (personal, fuera de git); se migran los hooks de Held de `settings.json`. `install`, `onboard` y `doctor` avisan si Held corre desde la caché de `npx`; `doctor` marca hooks que apuntan a archivos inexistentes.
+- **Falsos positivos del chat**: se descartan preguntas, hábitos ("como siempre…", "I always…") y pasado ("nunca usábamos…").
+- **Revocaciones**: "ya podés tocar `X`" / "ignore that" borra la instrucción guardada y ya no cuenta como perdida; lo reinyectado avisa que vale lo más reciente.
+- **Secretos** redactados en instrucciones guardadas y reportadas.
+- **¿Sirvió el pin?** `held report` muestra antes/después por pin aplicado (`pinEffects` en JSON).
+- **Cobertura**: si menos de la mitad de las reglas son verificables, el reporte muestra cómo reescribirlas.
+- `onboard` instala hooks solo para los harnesses con sesiones en el proyecto y dice qué hace cada uno (Cursor no puede influir en su resumen).
+- E2E por CLI (onboard → report → hooks con revocación → doctor → uninstall). 99 pruebas.
+
 ## 0.5.0 (22 nov 2026)
 
 Probado contra sesiones reales de Cursor (37 sesiones del workspace del hackathon y el repo trampa):

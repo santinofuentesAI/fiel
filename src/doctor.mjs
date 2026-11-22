@@ -3,6 +3,7 @@ import { defaultCursorRoot, findCursorTranscripts } from "./readers/cursor.mjs";
 import { defaultClaudeRoot, findClaudeTranscripts } from "./readers/claude.mjs";
 import { findRuleFiles, isGitRepo } from "./analyzers/exposure.mjs";
 import { harnessHookStatus } from "./install-status.mjs";
+import { isEphemeralInstall } from "./install.mjs";
 import { jevHealth, jevUrl, loadGate } from "./judges/jev.mjs";
 import { loadAutomations } from "./store.mjs";
 import { dim } from "./cli/format.mjs";
@@ -69,9 +70,20 @@ export async function doctor({
   checks.push({
     name: "hooks",
     required: false,
-    ok: hooks.any || appliedPins === 0,
-    detail: hookDetail,
+    ok: (hooks.any || appliedPins === 0) && hooks.broken.length === 0,
+    detail:
+      hooks.broken.length > 0
+        ? `ROTOS: apuntan a ${hooks.broken.join(", ")}, que ya no existe. Corre \`held install\` otra vez desde una instalación estable.`
+        : hookDetail,
   });
+  if (isEphemeralInstall()) {
+    checks.push({
+      name: "instalación",
+      required: false,
+      ok: false,
+      detail: "Held corre desde la caché de npx: si instalas hooks así, se rompen cuando npm limpie la caché. Usa `npm i -g --allow-git=all github:santinofuentesAI/held`.",
+    });
+  }
 
   const jev = await health();
   const gate = loadGate();

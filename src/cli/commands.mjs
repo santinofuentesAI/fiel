@@ -6,8 +6,9 @@ import { writeInstructions } from "../analyzers/extractor.mjs";
 import { doctor, formatDoctor } from "../doctor.mjs";
 import { prepareDemo } from "../demo.mjs";
 import { runOnboard } from "../onboard.mjs";
+import { pinEffects } from "../effects.mjs";
 import { runHook } from "../hooks/runtime.mjs";
-import { HARNESSES, installHooks, uninstallHooks } from "../install.mjs";
+import { HARNESSES, installHooks, isEphemeralInstall, uninstallHooks } from "../install.mjs";
 import { runGate } from "../judges/gate.mjs";
 import { askJev, gateFile, jevHealth, jevUrl, loadGate, saveGate } from "../judges/jev.mjs";
 import { judgeProject } from "../judges/judge.mjs";
@@ -105,10 +106,14 @@ export async function analyzeCommand(options, { version }) {
     singleProject && options.command === "report" ? [diffRun(result.projects[0], previous)] : null;
   if (singleProject && options.write && result.projects[0]) saveLastRun(projectDir, result.projects[0]);
   const automations = options.command === "report" && singleProject ? loadAutomations(result.projects[0].projectDir) : null;
-  const extra = { ...(automations ? { automations: automations.automations } : {}), ...(deltas ? { delta: deltas[0] } : {}) };
+  const effects = automations ? pinEffects(result.projects[0], automations.automations) : [];
+  const extra = {
+    ...(automations ? { automations: automations.automations, pinEffects: effects } : {}),
+    ...(deltas ? { delta: deltas[0] } : {}),
+  };
   if (options.json) return json(reportJson(result, { version, writtenFile, extra }));
   out(formatReport(result, { version, writtenFile, deltas }));
-  if (automations) out(formatAutomations(automations));
+  if (automations) out(formatAutomations(automations, effects));
   if (options.failOnViolations) {
     const violations = result.projects.reduce((sum, project) => sum + violationCount(project), 0);
     if (violations > 0) process.exitCode = 1;
@@ -184,6 +189,10 @@ export async function installCommand(options) {
     out(dim("Los hooks inyectan hechos de .held/ y guardan lo que pides en el chat para reinyectarlo tras compactar. No bloquean herramientas."));
     out(dim("Cursor Cloud Agents no corre hooks al inicio; los hechos @ session_start aplican en sesiones locales."));
     out(dim("El hook usa CURSOR_PROJECT_DIR / CLAUDE_PROJECT_DIR cuando el IDE los define."));
+    out(dim("Los comandos llevan rutas absolutas de esta máquina: no commitees .cursor/hooks.json si tu equipo no comparte esas rutas."));
+    if (isEphemeralInstall()) {
+      out(yellow("Aviso: Held corre desde la caché de npx; los hooks se rompen cuando npm la limpie. Instálalo global y corre `held install` de nuevo."));
+    }
   }
 }
 
@@ -238,7 +247,7 @@ export async function onboardCommand(options, { version }) {
     write: options.write && !options.dryRun,
     dryRun: options.dryRun,
     install: !options.dryRun,
-    harnesses: selectedHarnesses(options),
+    harnesses: options.cursor || options.claude ? selectedHarnesses(options) : undefined,
     sessionsFrom: options.sessionsFrom,
   });
   if (options.json) {
@@ -266,9 +275,16 @@ export async function onboardCommand(options, { version }) {
     out(yellow(`${hint.sessions} sesiones sin juzgar: no se sabe qué versión de ${hint.file} veían.`));
     if (hint.fix) out(dim(`  → ${hint.fix}.`));
   }
-  if (!options.dryRun && result.hookResults.length > 0) {
-    out(green("Hooks instalados en Cursor y Claude Code."));
-    out(dim("PreCompact pedirá conservar tokens exactos; tras compactar, SessionStart/postToolUse reinyecta hechos + tus instrucciones."));
+  if (options.dryRun) {
+    out(dim(`Instalaría hooks para: ${result.targetHarnesses.join(", ")} (los harnesses con sesiones en este proyecto).`));
+  }
+  for (const hook of result.hookResults) out(`${green("ok")} hooks ${hook.harness}: ${hook.file}`);
+  if (result.hookResults.length > 0) {
+    out(dim("Claude Code: PreCompact le pide al resumen conservar tus instrucciones y SessionStart las reinyecta tras compactar."));
+    out(dim("Cursor: su preCompact no puede influir en el resumen; Held las reinyecta en la primera herramienta después de compactar."));
+  }
+  if (!options.dryRun && isEphemeralInstall()) {
+    out(yellow("Aviso: Held corre desde la caché de npx; los hooks se rompen cuando npm la limpie. Instálalo global y corre `held onboard` de nuevo."));
   }
   if (lost > 0) {
     for (const item of result.compaction.lost.slice(0, 5)) {

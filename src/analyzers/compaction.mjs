@@ -1,6 +1,7 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
-import { directiveId, extractDirectives } from "./directives.mjs";
+import { directiveId, extractDirectives, revokedAnchors, revokes } from "./directives.mjs";
+import { redactSecrets } from "../security.mjs";
 
 // Rule files (AGENTS.md, CLAUDE.md, .cursor/rules) are re-sent after a compaction.
 // What a compaction can drop is what the user said in the chat, so only chat
@@ -79,8 +80,11 @@ export function chatDirectivesAtCompact(session) {
   const kept = [];
   const unanchored = [];
   const seen = new Set();
+  const userTexts = session.events.filter((event) => event.kind === "user_text");
   for (const event of view.compacted) {
+    const later = new Set(userTexts.filter((other) => other.index > event.index).flatMap((other) => [...revokedAnchors(other.text)]));
     for (const directive of extractDirectives(event.text)) {
+      if (revokes(directive, later)) continue;
       const id = directiveId(session.session, directive.text);
       if (seen.has(id)) continue;
       seen.add(id);
@@ -88,7 +92,7 @@ export function chatDirectivesAtCompact(session) {
         id,
         sessionId: session.session,
         harness: session.harness,
-        text: directive.text,
+        text: redactSecrets(directive.text),
         anchors: directive.anchors,
         at: event.timestamp ?? null,
       };
