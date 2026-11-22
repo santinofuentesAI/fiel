@@ -1,9 +1,10 @@
 {
-  "name": "fiel",
-  "version": "0.3.1",
-  "description": "CLI que mide si tu agente de Cursor o Claude Code cumplió las reglas de AGENTS.md y CLAUDE.md, y si sobrevivió lo que pediste en el chat a la compactación.",
+  "name": "held",
+  "version": "0.4.0",
+  "description": "CLI Held: mide si tu agente cumplió AGENTS.md/CLAUDE.md en sesiones reales y si lo del chat sobrevivió a la compactación.",
   "type": "module",
   "bin": {
+    "held": "./bin/held.mjs",
     "fiel": "./bin/fiel.mjs"
   },
   "files": [
@@ -35,7 +36,7 @@
   ],
   "scripts": {
     "test": "node --test test/*.test.mjs",
-    "demo": "node bin/fiel.mjs demo"
+    "demo": "node bin/held.mjs demo"
   },
   "engines": {
     "node": ">=20"

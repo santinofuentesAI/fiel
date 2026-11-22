@@ -4,14 +4,17 @@ import { fileURLToPath } from "node:url";
 import { HOOK_EVENTS } from "./hooks/runtime.mjs";
 
 export const HARNESSES = ["cursor", "claude"];
-const MARKER = "fiel.mjs\" hook ";
+const MARKERS = ['held.mjs" hook ', 'fiel.mjs" hook '];
 
-export function fielBinPath() {
-  return join(dirname(fileURLToPath(import.meta.url)), "..", "bin", "fiel.mjs");
+export function heldBinPath() {
+  return join(dirname(fileURLToPath(import.meta.url)), "..", "bin", "held.mjs");
 }
 
-function hookCommand({ nodePath, fielPath }, harness, event) {
-  return `${JSON.stringify(nodePath)} ${JSON.stringify(fielPath)} hook ${harness} ${event}`;
+/** @deprecated */
+export const fielBinPath = heldBinPath;
+
+function hookCommand({ nodePath, heldPath }, harness, event) {
+  return `${JSON.stringify(nodePath)} ${JSON.stringify(heldPath)} hook ${harness} ${event}`;
 }
 
 function readConfig(file, fallback) {
@@ -23,13 +26,13 @@ function readConfig(file, fallback) {
   }
 }
 
-const isFiel = (command) => String(command ?? "").includes(MARKER);
+const isHeldHook = (command) => MARKERS.some((marker) => String(command ?? "").includes(marker));
 
 // Cursor: .cursor/hooks.json, flat list per event.
 export function mergeCursorHooks(config, bin) {
   const hooks = { ...(config.hooks ?? {}) };
   for (const event of Object.keys(HOOK_EVENTS.cursor)) {
-    const current = (hooks[event] ?? []).filter((entry) => !isFiel(entry.command));
+    const current = (hooks[event] ?? []).filter((entry) => !isHeldHook(entry.command));
     hooks[event] = [...current, { command: hookCommand(bin, "cursor", event), timeout: 5 }];
   }
   return { ...config, version: config.version ?? 1, hooks };
@@ -38,7 +41,7 @@ export function mergeCursorHooks(config, bin) {
 export function stripCursorHooks(config) {
   const hooks = {};
   for (const [event, entries] of Object.entries(config.hooks ?? {})) {
-    const kept = entries.filter((entry) => !isFiel(entry.command));
+    const kept = entries.filter((entry) => !isHeldHook(entry.command));
     if (kept.length > 0) hooks[event] = kept;
   }
   return { ...config, hooks };
@@ -61,7 +64,7 @@ export function stripClaudeHooks(settings) {
   const hooks = {};
   for (const [event, groups] of Object.entries(settings.hooks)) {
     const kept = groups
-      .map((group) => ({ ...group, hooks: (group.hooks ?? []).filter((hook) => !isFiel(hook.command)) }))
+      .map((group) => ({ ...group, hooks: (group.hooks ?? []).filter((hook) => !isHeldHook(hook.command)) }))
       .filter((group) => group.hooks.length > 0);
     if (kept.length > 0) hooks[event] = kept;
   }
@@ -88,9 +91,10 @@ function apply(projectDir, harnesses, { dryRun, transform }) {
 
 export function installHooks(
   projectDir,
-  { harnesses = HARNESSES, nodePath = process.execPath, fielPath = fielBinPath(), dryRun = false } = {},
+  { harnesses = HARNESSES, nodePath = process.execPath, heldPath = heldBinPath(), fielPath, dryRun = false } = {},
 ) {
-  return apply(projectDir, harnesses, { dryRun, transform: (target, config) => target.merge(config, { nodePath, fielPath }) });
+  const binPath = heldPath ?? fielPath ?? heldBinPath();
+  return apply(projectDir, harnesses, { dryRun, transform: (target, config) => target.merge(config, { nodePath, heldPath: binPath }) });
 }
 
 export function uninstallHooks(projectDir, { harnesses = HARNESSES, dryRun = false } = {}) {

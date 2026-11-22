@@ -7,7 +7,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { encodeProjectKey } from "../src/readers/projects.mjs";
 
-const BIN = fileURLToPath(new URL("../bin/fiel.mjs", import.meta.url));
+const BIN = fileURLToPath(new URL("../bin/held.mjs", import.meta.url));
 const RULES = "# Reglas\n\n- Don't edit `generated/`.\n- Responde en español.\n";
 
 function fixture() {
@@ -37,7 +37,7 @@ function fixture() {
   return { project, cursorRoot };
 }
 
-function fiel(args, cursorRoot) {
+function held(args, cursorRoot) {
   return spawnSync(process.execPath, [BIN, ...args], {
     encoding: "utf8",
     env: {
@@ -49,9 +49,9 @@ function fiel(args, cursorRoot) {
   });
 }
 
-test("analyze --json reporta la violación con evidencia y escribe .fiel/instructions.json", () => {
+test("analyze --json reporta la violación con evidencia y escribe .held/instructions.json", () => {
   const { project, cursorRoot } = fixture();
-  const result = fiel(["analyze", project, "--json"], cursorRoot);
+  const result = held(["analyze", project, "--json"], cursorRoot);
   assert.equal(result.status, 0, result.stderr);
   const report = JSON.parse(result.stdout);
   const [rule] = report.projects[0].rules.filter((item) => item.verifiable);
@@ -61,24 +61,24 @@ test("analyze --json reporta la violación con evidencia y escribe .fiel/instruc
     [["abc12345", "Write", "generated/api.ts"]],
   );
   assert.equal(report.projects[0].sessions[0].exposure[0].status, "git");
-  assert.ok(existsSync(join(project, ".fiel", "instructions.json")));
+  assert.ok(existsSync(join(project, ".held", "instructions.json")));
   assert.equal(readFileSync(join(project, "AGENTS.md"), "utf8"), RULES);
 });
 
 test("analyze en texto muestra el origen [archivo:línea]", () => {
   const { project, cursorRoot } = fixture();
-  const result = fiel(["analyze", project], cursorRoot);
+  const result = held(["analyze", project], cursorRoot);
   assert.equal(result.status, 0, result.stderr);
   assert.match(result.stdout, /\[AGENTS\.md:3\] sesión abc12345 · Write generated\/api\.ts/);
 });
 
 test("help y version salen 0", () => {
   const { cursorRoot } = fixture();
-  const help = fiel(["--help"], cursorRoot);
+  const help = held(["--help"], cursorRoot);
   assert.equal(help.status, 0);
-  assert.match(help.stdout, /fiel analyze/);
-  assert.match(help.stdout, /fiel doctor/);
-  const ver = fiel(["--version"], cursorRoot);
+  assert.match(help.stdout, /held analyze/);
+  assert.match(help.stdout, /held doctor/);
+  const ver = held(["--version"], cursorRoot);
   assert.equal(ver.status, 0);
   assert.match(ver.stdout.trim(), /^\d+\.\d+\.\d+$/);
 });
@@ -87,15 +87,15 @@ test("errores claros con código 1: sin sesiones, sin reglas, opción inválida"
   const { project, cursorRoot } = fixture();
   const empty = mkdtempSync(join(tmpdir(), "fiel-empty-"));
 
-  const noSessions = fiel(["analyze", empty], cursorRoot);
+  const noSessions = held(["analyze", empty], cursorRoot);
   assert.equal(noSessions.status, 1);
   assert.match(noSessions.stderr, /No hay sesiones de Cursor/);
 
-  const noRules = fiel(["analyze", empty, "--sessions-from", project], cursorRoot);
+  const noRules = held(["analyze", empty, "--sessions-from", project], cursorRoot);
   assert.equal(noRules.status, 1);
   assert.match(noRules.stderr, /No hay archivos de reglas/);
 
-  const badOption = fiel(["analyze", "--nope"], cursorRoot);
+  const badOption = held(["analyze", "--nope"], cursorRoot);
   assert.equal(badOption.status, 1);
   assert.match(badOption.stderr, /Opción desconocida/);
 });

@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { installHooks, uninstallHooks } from "../src/install.mjs";
 
-const BIN = { nodePath: "/usr/bin/node", fielPath: "/opt/fiel/bin/fiel.mjs" };
+const BIN = { nodePath: "/usr/bin/node", heldPath: "/opt/held/bin/held.mjs" };
 const read = (file) => JSON.parse(readFileSync(file, "utf8"));
 
 function projectWithExistingHooks() {
@@ -20,7 +20,7 @@ function projectWithExistingHooks() {
   return dir;
 }
 
-test("install agrega los hooks de Fiel sin borrar los del usuario y es idempotente", () => {
+test("install agrega los hooks de Held sin borrar los del usuario y es idempotente", () => {
   const dir = projectWithExistingHooks();
   installHooks(dir, BIN);
   installHooks(dir, BIN);
@@ -29,18 +29,18 @@ test("install agrega los hooks de Fiel sin borrar los del usuario y es idempoten
   assert.deepEqual(Object.keys(cursor.hooks).sort(), ["beforeSubmitPrompt", "postToolUse", "preCompact", "sessionStart"]);
   assert.equal(cursor.hooks.sessionStart.length, 2);
   assert.equal(cursor.hooks.sessionStart[0].command, "echo mio");
-  assert.match(cursor.hooks.sessionStart[1].command, /fiel\.mjs" hook cursor sessionStart$/);
+  assert.match(cursor.hooks.sessionStart[1].command, /held\.mjs" hook cursor sessionStart$/);
 
   const claude = read(join(dir, ".claude", "settings.json"));
   assert.equal(claude.model, "opus");
   assert.equal(claude.hooks.PreToolUse[0].hooks[0].command, "echo guard");
   assert.equal(claude.hooks.SessionStart.length, 1);
   assert.equal(claude.hooks.PostToolUse[0].matcher, "Read");
-  assert.match(claude.hooks.PreCompact[0].hooks[0].command, /hook claude PreCompact$/);
+  assert.match(claude.hooks.PreCompact[0].hooks[0].command, /held\.mjs" hook claude PreCompact$/);
   assert.equal(JSON.stringify([cursor, claude]).includes("deny"), false);
 });
 
-test("uninstall quita solo lo de Fiel; dry-run no escribe", () => {
+test("uninstall quita solo lo de Held; dry-run no escribe", () => {
   const dir = projectWithExistingHooks();
   installHooks(dir, BIN);
   uninstallHooks(dir);

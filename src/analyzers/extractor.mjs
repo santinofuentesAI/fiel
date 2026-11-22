@@ -166,7 +166,7 @@ export function extractInstructions(content, sourceFile) {
 }
 
 export function writeInstructions(projectDir, instructions, generatedAt = new Date()) {
-  const dir = join(projectDir, ".fiel");
+  const dir = join(projectDir, ".held");
   mkdirSync(dir, { recursive: true });
   const file = join(dir, "instructions.json");
   const payload = { version: 1, generatedAt: generatedAt.toISOString(), instructions };

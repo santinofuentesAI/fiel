@@ -9,7 +9,9 @@ import { analyzeSessions } from "./analyzers/compliance.mjs";
 import { loadScripts } from "./analyzers/scripts.mjs";
 import { chatDirectivesAtCompact } from "./analyzers/compaction.mjs";
 
-export class FielError extends Error {}
+export class HeldError extends Error {}
+/** @deprecated usar HeldError */
+export const FielError = HeldError;
 
 function readEvents(transcript) {
   return transcript.harness === "claude"
@@ -74,7 +76,7 @@ export function analyzePath(
   { cursorRoot = defaultCursorRoot(), claudeRoot = defaultClaudeRoot(), sessionsFrom = null, now = new Date() } = {},
 ) {
   const projectDir = resolve(path);
-  if (!isDirectory(projectDir)) throw new FielError(`La ruta no existe o no es una carpeta: ${projectDir}`);
+  if (!isDirectory(projectDir)) throw new HeldError(`La ruta no existe o no es una carpeta: ${projectDir}`);
   const sessionRoot = sessionsFrom ? resolve(sessionsFrom) : projectDir;
   const key = encodeProjectKey(sessionRoot);
   const transcripts = [
@@ -82,12 +84,12 @@ export function analyzePath(
     ...findClaudeTranscripts(claudeRoot).filter((transcript) => resolve(transcript.projectDir) === sessionRoot),
   ];
   if (transcripts.length === 0) {
-    throw new FielError(
+    throw new HeldError(
       `No hay sesiones de Cursor ni de Claude Code para ${sessionsFrom ?? projectDir} (buscado como "${key}" en ${cursorRoot} y por cwd en ${claudeRoot}).`,
     );
   }
   if (findRuleFiles(projectDir).length === 0) {
-    throw new FielError(`No hay archivos de reglas en ${projectDir} (AGENTS.md, CLAUDE.md o .cursor/rules/).`);
+    throw new HeldError(`No hay archivos de reglas en ${projectDir} (AGENTS.md, CLAUDE.md o .cursor/rules/).`);
   }
   return { projects: [analyzeProject({ projectDir, sessionRoot, transcripts, now })], skippedProjects: [] };
 }
@@ -134,7 +136,7 @@ export function analyzeAll({
   resolveKey = resolveProjectKey,
 } = {}) {
   const transcripts = [...findCursorTranscripts(cursorRoot), ...findClaudeTranscripts(claudeRoot)];
-  if (transcripts.length === 0) throw new FielError(`No hay sesiones de Cursor (${cursorRoot}) ni de Claude Code (${claudeRoot}).`);
+  if (transcripts.length === 0) throw new HeldError(`No hay sesiones de Cursor (${cursorRoot}) ni de Claude Code (${claudeRoot}).`);
   const { groups, skipped } = groupByProjectDir(transcripts, resolveKey);
   const projects = [];
   for (const [projectDir, group] of groups) {

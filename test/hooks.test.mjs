@@ -37,7 +37,7 @@ test("Claude Code: guarda lo pedido en el chat, lo pide al resumen y lo reinyect
   const { dir } = projectWithAutomations();
   const base = { session_id: "conv-1", cwd: dir };
   run(dir, "claude", "UserPromptSubmit", { ...base, prompt: PROMPT });
-  const chat = JSON.parse(readFileSync(join(dir, ".fiel", "chat", "conv-1.json"), "utf8"));
+  const chat = JSON.parse(readFileSync(join(dir, ".held", "chat", "conv-1.json"), "utf8"));
   assert.deepEqual(chat.directives.map((item) => item.text), ["Ojo: no toques `scripts/db-reset.mjs`."]);
 
   const preCompact = run(dir, "claude", "PreCompact", { ...base, trigger: "auto" });
@@ -63,11 +63,11 @@ test("Cursor: preCompact marca la conversación y el siguiente postToolUse reiny
   assert.deepEqual(second, {});
 });
 
-test("falla abierto: JSON inválido, evento desconocido y sin .fiel/", () => {
+test("falla abierto: JSON inválido, evento desconocido y sin .held/", () => {
   const dir = mkdtempSync(join(tmpdir(), "fiel-hook-empty-"));
   assert.equal(runHook({ harness: "cursor", event: "sessionStart", projectDir: dir, stdin: "{roto" }), "{}");
   assert.equal(runHook({ harness: "cursor", event: "inventado", projectDir: dir, stdin: "{}" }), "{}");
   assert.equal(runHook({ harness: "claude", event: "SessionStart", projectDir: dir, stdin: "{}" }), "");
   assert.equal(runHook({ harness: "claude", event: "Stop", projectDir: dir, stdin: "{}", dryRun: true }), "");
-  assert.ok(existsSync(join(dir, ".fiel", ".gitignore")));
+  assert.ok(existsSync(join(dir, ".held", ".gitignore")));
 });

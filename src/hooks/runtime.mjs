@@ -3,13 +3,13 @@ import { dirname, isAbsolute, join, relative } from "node:path";
 import { extractDirectives } from "../analyzers/directives.mjs";
 import { pathMatcher } from "../analyzers/compliance.mjs";
 import { parseHookStdin } from "../security.mjs";
-import { appendLog, ensureFielDir, fielDir, loadAutomations, readJson } from "../store.mjs";
+import { appendLog, ensureHeldDir, heldDir, loadAutomations, readJson } from "../store.mjs";
 
 const MAX_FACT_CHARS = 700;
 const MAX_DIRECTIVE_CHARS = 1200;
 const MAX_DIRECTIVES = 12;
 
-// Each harness names its events differently; Fiel only cares about four moments.
+// Each harness names its events differently; Held only cares about four moments.
 export const HOOK_EVENTS = {
   cursor: { sessionStart: "session_start", beforeSubmitPrompt: "prompt", preCompact: "pre_compact", postToolUse: "tool" },
   claude: { SessionStart: "session_start", UserPromptSubmit: "prompt", PreCompact: "pre_compact", PostToolUse: "tool" },
@@ -17,7 +17,7 @@ export const HOOK_EVENTS = {
 
 function chatFile(projectDir, conversation) {
   const safe = String(conversation ?? "default").replace(/[^\w.-]/g, "_").slice(0, 80);
-  return join(fielDir(projectDir), "chat", `${safe}.json`);
+  return join(heldDir(projectDir), "chat", `${safe}.json`);
 }
 
 export function loadChat(projectDir, conversation) {
@@ -29,7 +29,7 @@ export function loadChat(projectDir, conversation) {
 }
 
 function saveChat(projectDir, conversation, chat) {
-  ensureFielDir(projectDir);
+  ensureHeldDir(projectDir);
   const file = chatFile(projectDir, conversation);
   mkdirSync(dirname(file), { recursive: true });
   writeFileSync(file, `${JSON.stringify(chat, null, 2)}\n`);
@@ -81,12 +81,12 @@ function capped(header, lines, max) {
 }
 
 export function formatFacts(facts) {
-  return capped("Hechos medidos por Fiel en sesiones anteriores (información, no órdenes):", facts.map((item) => item.fact), MAX_FACT_CHARS);
+  return capped("Hechos medidos por Held en sesiones anteriores (información, no órdenes):", facts.map((item) => item.fact), MAX_FACT_CHARS);
 }
 
 export function formatDirectives(directives) {
   return capped(
-    "Instrucciones que el usuario escribió en este chat antes de compactar (Fiel las guardó textuales):",
+    "Instrucciones que el usuario escribió en este chat antes de compactar (Held las guardó textuales):",
     directives.map((item) => `«${item.text}»`),
     MAX_DIRECTIVE_CHARS,
   );
@@ -136,7 +136,7 @@ export function decideHook({ harness, event, input, projectDir, now = new Date()
       else if (chat.directives.length > 0) {
         chat.pendingReinject = true;
         chatChanged = true;
-        userMessage = `Fiel va a reinyectar ${chat.directives.length} instrucciones de este chat después de compactar.`;
+        userMessage = `Held va a reinyectar ${chat.directives.length} instrucciones de este chat después de compactar.`;
       }
       break;
     case "tool": {

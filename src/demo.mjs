@@ -25,7 +25,7 @@ function copySession(source, target, projectDir) {
 
 // Builds a throwaway copy of the trap repo with its rules committed before the
 // sessions, plus Cursor and Claude Code session folders pointing at it.
-export function prepareDemo(base = mkdtempSync(join(tmpdir(), "fiel-demo-"))) {
+export function prepareDemo(base = mkdtempSync(join(tmpdir(), "held-demo-"))) {
   const projectDir = join(base, "tienda");
   mkdirSync(projectDir, { recursive: true });
   for (const file of ["AGENTS.md", "package.json"]) writeFileSync(join(projectDir, file), readFileSync(join(EXAMPLE_DIR, file)));

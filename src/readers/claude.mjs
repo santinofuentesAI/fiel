@@ -2,6 +2,7 @@ import { closeSync, openSync, readFileSync, readSync, readdirSync, statSync } fr
 import { homedir } from "node:os";
 import { basename, join } from "node:path";
 import { toolFamily } from "./cursor.mjs";
+import { envFirst } from "../env.mjs";
 
 // Lines Claude Code writes on the user's behalf: slash-command echoes, local
 // command output and reminders. They are not instructions from the user.
@@ -9,7 +10,7 @@ const SYNTHETIC_USER_TEXT = /^\s*<(?:command-name|command-message|command-args|l
 const HEAD_BYTES = 64 * 1024;
 
 export function defaultClaudeRoot() {
-  return process.env.FIEL_CLAUDE_PROJECTS ?? join(homedir(), ".claude", "projects");
+  return envFirst(["HELD_CLAUDE_PROJECTS", "FIEL_CLAUDE_PROJECTS"], join(homedir(), ".claude", "projects"));
 }
 
 function textBlocks(content) {

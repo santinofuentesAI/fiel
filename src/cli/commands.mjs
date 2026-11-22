@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { analyzeAll, analyzePath, FielError } from "../analyze.mjs";
+import { analyzeAll, analyzePath, HeldError } from "../analyze.mjs";
 import { DEFINITIONS } from "../analyzers/compliance.mjs";
 import { writeInstructions } from "../analyzers/extractor.mjs";
 import { doctor, formatDoctor } from "../doctor.mjs";
@@ -56,18 +56,18 @@ function reportJson(result, { version, writtenFile = null, extra = {} }) {
 
 async function requireGate() {
   const health = await jevHealth();
-  if (!health.ok) throw new FielError(`Jev no responde en ${jevUrl()}. Levántalo con \`./jev serve\` o quita --judge.`);
+  if (!health.ok) throw new HeldError(`Jev no responde en ${jevUrl()}. Levántalo con \`./jev serve\` o quita --judge.`);
   const gate = loadGate();
-  if (!gate) throw new FielError("Jev no tiene compuerta medida. Corre `fiel jev gate` primero.");
+  if (!gate) throw new HeldError("Jev no tiene compuerta medida. Corre `held jev gate` primero.");
   return gate;
 }
 
 async function analyze(options, roots = {}) {
-  if (options.all && options.path) throw new FielError("Usa una ruta o --all, no ambas.");
+  if (options.all && options.path) throw new HeldError("Usa una ruta o --all, no ambas.");
   const result = options.all
     ? analyzeAll(roots)
     : analyzePath(options.path ?? process.cwd(), { sessionsFrom: options.sessionsFrom, ...roots });
-  if (result.projects.length === 0) throw new FielError("Ningún proyecto con sesiones tiene carpeta en disco y archivos de reglas.");
+  if (result.projects.length === 0) throw new HeldError("Ningún proyecto con sesiones tiene carpeta en disco y archivos de reglas.");
   if (options.judge === "jev") {
     const gate = await requireGate();
     for (const project of result.projects) project.judged = await judgeProject(project, { ask: askJev, gate });
@@ -77,7 +77,7 @@ async function analyze(options, roots = {}) {
     try {
       writtenFile = writeInstructions(result.projects[0].projectDir, result.projects[0].currentRules);
     } catch (error) {
-      console.error(`fiel: aviso: no se pudo escribir .fiel/instructions.json (${error.code ?? error.message}); el análisis sigue.`);
+      console.error(`held: aviso: no se pudo escribir .held/instructions.json (${error.code ?? error.message}); el análisis sigue.`);
     }
   }
   return { result, writtenFile };
@@ -122,7 +122,7 @@ export async function sessionsCommand(options, { version }) {
 }
 
 export async function applyCommand(options) {
-  if (!options.id) throw new FielError("fiel apply necesita un id. Corre `fiel suggest` para verlos.");
+  if (!options.id) throw new HeldError("held apply necesita un id. Corre `held suggest` para verlos.");
   const path = resolve(options.path ?? process.cwd());
   const store = loadAutomations(path);
   let item = findAutomation(store, options.id);
@@ -131,19 +131,19 @@ export async function applyCommand(options) {
     mergeSuggestions(store, suggestFromAnalysis(result.projects[0]));
     item = findAutomation(store, options.id);
   }
-  if (!item) throw new FielError(`No hay propuesta ${options.id}. Corre \`fiel suggest\` primero.`);
+  if (!item) throw new HeldError(`No hay propuesta ${options.id}. Corre \`held suggest\` primero.`);
   const applied = applySuggestion(store, item);
   saveAutomations(path, store);
   if (options.json) return json(applied);
-  out(`Aplicada ${applied.id} (${applied.kind} @ ${applied.trigger}) en ${path}/.fiel/automations.json`);
+  out(`Aplicada ${applied.id} (${applied.kind} @ ${applied.trigger}) en ${path}/.held/automations.json`);
 }
 
 export async function undoCommand(options) {
-  if (!options.id) throw new FielError("fiel undo necesita un id.");
+  if (!options.id) throw new HeldError("held undo necesita un id.");
   const path = resolve(options.path ?? process.cwd());
   const store = loadAutomations(path);
   const undone = undoAutomation(store, findAutomation(store, options.id)?.id);
-  if (!undone) throw new FielError(`No hay automatización ${options.id} para deshacer.`);
+  if (!undone) throw new HeldError(`No hay automatización ${options.id} para deshacer.`);
   saveAutomations(path, store);
   if (options.json) return json(undone);
   out(`Deshecha ${undone.id}. Los hooks ya no la inyectan.`);
@@ -166,7 +166,7 @@ export async function installCommand(options) {
     else out(`${green("ok")} ${result.harness}: ${result.file}`);
   }
   if (options.command === "install" && !options.dryRun) {
-    out(dim("Los hooks inyectan hechos de .fiel/ y guardan lo que pides en el chat para reinyectarlo tras compactar. No bloquean herramientas."));
+    out(dim("Los hooks inyectan hechos de .held/ y guardan lo que pides en el chat para reinyectarlo tras compactar. No bloquean herramientas."));
     out(dim("Cursor Cloud Agents no corre hooks al inicio; los hechos @ session_start aplican en sesiones locales."));
     out(dim("El hook usa CURSOR_PROJECT_DIR / CLAUDE_PROJECT_DIR cuando el IDE los define."));
   }
@@ -192,12 +192,12 @@ export async function jevCommand(options) {
     const gate = loadGate();
     if (options.json) return json({ url: jevUrl(), health, gate });
     out(`Jev en ${jevUrl()}: ${health.ok ? green("responde") : `no responde (${health.detail})`}`);
-    out(gate ? formatGate(gate) : "Sin compuerta medida. Corre `fiel jev gate` con Jev levantado.");
+    out(gate ? formatGate(gate) : "Sin compuerta medida. Corre `held jev gate` con Jev levantado.");
     return;
   }
-  if (action !== "gate") throw new FielError(`Acción desconocida: fiel jev ${action}. Usa status o gate.`);
+  if (action !== "gate") throw new HeldError(`Acción desconocida: held jev ${action}. Usa status o gate.`);
   const health = await jevHealth();
-  if (!health.ok) throw new FielError(`Jev no responde en ${jevUrl()}. Descárgalo de https://github.com/feder-cr/jev y corre \`./jev serve\`.`);
+  if (!health.ok) throw new HeldError(`Jev no responde en ${jevUrl()}. Descárgalo de https://github.com/feder-cr/jev y corre \`./jev serve\`.`);
   const gate = await runGate(askJev, {
     onProgress: (done, total) => {
       if (!options.json && process.stderr.isTTY) process.stderr.write(`\r  ${done}/${total} casos`);
@@ -207,7 +207,7 @@ export async function jevCommand(options) {
   const file = saveGate(gate);
   if (options.json) return json({ file, ...gate });
   out(formatGate(gate));
-  out(dim(`Guardado en ${file}. \`fiel analyze --judge jev\` usa solo las tareas encendidas.`));
+  out(dim(`Guardado en ${file}. \`held analyze --judge jev\` usa solo las tareas encendidas.`));
 }
 
 export async function doctorCommand(options) {
@@ -238,7 +238,7 @@ export async function demoCommand(options, { version }) {
   if (options.json) {
     return json({ ...reportJson(result, { version }), demo, suggestions, hooks: { preCompact, afterCompact: JSON.parse(afterCompact || "{}") } });
   }
-  out(bold("fiel demo · repo trampa con 5 sesiones reales de Cursor y 1 de ejemplo de Claude Code"));
+  out(bold("held demo · repo trampa con 5 sesiones reales de Cursor y 1 de ejemplo de Claude Code"));
   out(dim(`Carpeta temporal: ${demo.base}\n`));
   out(formatReport(result, { version }));
   out("");
@@ -250,5 +250,5 @@ export async function demoCommand(options, { version }) {
   out(bold("2) Lo que el hook reinyecta después de compactar (SessionStart, source=compact):"));
   out(dim(JSON.parse(afterCompact || "{}").hookSpecificOutput?.additionalContext ?? "(nada)"));
   out("");
-  out(`Pruébalo en tu proyecto: ${bold("fiel analyze")}, ${bold("fiel suggest")}, ${bold("fiel apply <id>")}, ${bold("fiel install")}.`);
+  out(`Pruébalo en tu proyecto: ${bold("held analyze")}, ${bold("held suggest")}, ${bold("held apply <id>")}, ${bold("held install")}.`);
 }

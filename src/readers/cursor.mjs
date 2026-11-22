@@ -1,6 +1,7 @@
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { homedir } from "node:os";
 import { join, sep } from "node:path";
+import { envFirst } from "../env.mjs";
 
 const USER_QUERY = /<user_query>\s*([\s\S]*?)\s*<\/user_query>/;
 const TIMESTAMP =
@@ -110,7 +111,7 @@ export function sessionStart(events) {
 }
 
 export function defaultCursorRoot() {
-  return process.env.FIEL_CURSOR_PROJECTS ?? join(homedir(), ".cursor", "projects");
+  return envFirst(["HELD_CURSOR_PROJECTS", "FIEL_CURSOR_PROJECTS"], join(homedir(), ".cursor", "projects"));
 }
 
 export function findCursorTranscripts(root = defaultCursorRoot()) {

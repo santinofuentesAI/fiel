@@ -1,17 +1,17 @@
-# Fiel
+# Held
 
 > **Tu agente no necesita más contexto. Necesita el correcto, y saber si lo está usando.**
 
-Fiel es una **CLI de desarrollador** que lee las sesiones de **Cursor** y **Claude Code** que ya tienes en disco y responde dos preguntas con evidencia:
+Held es una **CLI de desarrollador** que lee las sesiones de **Cursor** y **Claude Code** que ya tienes en disco y responde dos preguntas con evidencia:
 
 1. **¿El agente cumplió `AGENTS.md`, `CLAUDE.md` y `.cursor/rules/`?** Regla por regla, con la herramienta, la ruta o el comando exacto y el origen `[AGENTS.md:15]`.
 2. **¿Sobrevivió a la compactación lo que le pediste en el chat?** Los archivos de reglas se reenvían en cada turno; lo que escribiste en el chat ("no toques `scripts/db-reset.mjs`") vive solo en el historial, y el resumen de la compactación puede perderlo.
 
-Después de medir, Fiel actúa sin tocar tus reglas: propone hechos para reinyectar (`fiel suggest`), los guarda en `.fiel/` (`fiel apply`) e instala hooks de Cursor y Claude Code (`fiel install`) que conservan tus instrucciones del chat al compactar.
+Después de medir, Held actúa sin tocar tus reglas: propone hechos para reinyectar (`held suggest`), los guarda en `.held/` (`held apply`) e instala hooks de Cursor y Claude Code (`held install`) que conservan tus instrucciones del chat al compactar.
 
 Sin API key, sin servidor, sin dependencias (Node 20+). Tus transcripts no salen de tu máquina.
 
-*In English: Fiel is a zero-dependency Node CLI that measures, per rule, whether your Cursor or Claude Code agent followed AGENTS.md/CLAUDE.md in real sessions, detects chat instructions lost at context compaction, and installs hooks that keep them alive. An optional local judge (Jev) only turns on for tasks where it passed a measured precision gate.*
+*In English: Held is a zero-dependency Node CLI that measures, per rule, whether your Cursor or Claude Code agent followed AGENTS.md/CLAUDE.md in real sessions, detects chat instructions lost at context compaction, and installs hooks that keep them alive. An optional local judge (Jev) only turns on for tasks where it passed a measured precision gate.*
 
 ## Pruébalo en 30 segundos
 
@@ -42,75 +42,77 @@ Keep these instructions the user wrote in this chat verbatim in the summary:
 
 ```bash
 npm install -g --allow-git=all github:santinofuentesAI/fiel
-fiel doctor        # revisa Node, sesiones de Cursor y Claude Code, reglas, git y Jev
-fiel analyze       # el proyecto de la carpeta actual
+held doctor        # revisa Node, sesiones de Cursor y Claude Code, reglas, git y Jev
+held analyze       # el proyecto de la carpeta actual
 ```
 
-O sin instalar: `git clone https://github.com/santinofuentesAI/fiel && cd fiel && node bin/fiel.mjs demo`.
+El paquete npm se llama **held**; el repo en GitHub sigue en `santinofuentesAI/fiel` hasta que renombres el remote. Los bins son `held` (principal) y `fiel` (alias con aviso).
 
-Fiel busca las sesiones en `~/.cursor/projects/` y `~/.claude/projects/`. Variables útiles:
+O sin instalar: `git clone https://github.com/santinofuentesAI/fiel && cd fiel && node bin/held.mjs demo`.
+
+Held busca las sesiones en `~/.cursor/projects/` y `~/.claude/projects/`. Variables útiles:
 
 | Variable | Para qué |
 |---|---|
-| `FIEL_CURSOR_PROJECTS` / `FIEL_CLAUDE_PROJECTS` | Dónde están los transcripts |
+| `HELD_CURSOR_PROJECTS` / `HELD_CLAUDE_PROJECTS` | Dónde están los transcripts |
 | `CURSOR_PROJECT_DIR` / `CLAUDE_PROJECT_DIR` | Los hooks del IDE apuntan el proyecto activo |
-| `FIEL_HOME` | Comp puerta de Jev (`~/.fiel`) |
-| `FIEL_JEV_URL` | URL del juez local (default `http://127.0.0.1:8017/v1/systemone`) |
+| `HELD_HOME` | Comp puerta de Jev (`~/.held`) |
+| `HELD_JEV_URL` | URL del juez local (default `http://127.0.0.1:8017/v1/systemone`) |
 
 ## Comandos
 
 | Comando | Qué hace | Escribe |
 |---|---|---|
-| `fiel demo` | Todo el flujo sobre el repo de ejemplo incluido | Carpeta temporal |
-| `fiel doctor` | Revisa el entorno y dice qué falta | Nada |
-| `fiel analyze [ruta]` | Cumplimiento por regla y compactación, con evidencia | `.fiel/instructions.json` (desactívalo con `--no-write`) |
-| `fiel analyze --all` | Todos los proyectos con sesiones en disco | Igual |
-| `fiel report [ruta]` | `analyze` + automatizaciones aplicadas | Igual |
-| `fiel suggest [ruta]` | Propone hechos para reinyectar a partir de lo medido | `.fiel/automations.json` |
-| `fiel apply <id>` / `fiel undo <id>` | Aplica o deshace una propuesta | `.fiel/automations.json` |
-| `fiel install [ruta]` | Hooks de Cursor (`.cursor/hooks.json`) y Claude Code (`.claude/settings.json`) | Esos dos archivos, sin borrar tus hooks |
-| `fiel uninstall [ruta]` | Quita solo los hooks de Fiel | Esos dos archivos |
-| `fiel jev status` / `fiel jev gate` | Estado del juez local y su compuerta de calidad | `~/.fiel/jev-gate.json` |
-| `fiel analyze --judge jev` | Agrega hallazgos probabilísticos, separados de los determinísticos | Igual que `analyze` |
-| `fiel sessions [ruta]` | Sesiones en disco con fecha y conteo de violaciones | Nada |
+| `held demo` | Todo el flujo sobre el repo de ejemplo incluido | Carpeta temporal |
+| `held doctor` | Revisa el entorno y dice qué falta | Nada |
+| `held analyze [ruta]` | Cumplimiento por regla y compactación, con evidencia | `.held/instructions.json` (desactívalo con `--no-write`) |
+| `held analyze --all` | Todos los proyectos con sesiones en disco | Igual |
+| `held report [ruta]` | `analyze` + automatizaciones aplicadas | Igual |
+| `held suggest [ruta]` | Propone hechos para reinyectar a partir de lo medido | `.held/automations.json` |
+| `held apply <id>` / `held undo <id>` | Aplica o deshace una propuesta | `.held/automations.json` |
+| `held install [ruta]` | Hooks de Cursor (`.cursor/hooks.json`) y Claude Code (`.claude/settings.json`) | Esos dos archivos, sin borrar tus hooks |
+| `held uninstall [ruta]` | Quita solo los hooks de Held | Esos dos archivos |
+| `held jev status` / `held jev gate` | Estado del juez local y su compuerta de calidad | `~/.held/jev-gate.json` |
+| `held analyze --judge jev` | Agrega hallazgos probabilísticos, separados de los determinísticos | Igual que `analyze` |
+| `held sessions [ruta]` | Sesiones en disco con fecha y conteo de violaciones | Nada |
 
 Opciones: `--json`, `--fail-on-violations` (CI), `--no-write`, `--save` (con `suggest`), `--dry-run` (install), `--cursor` / `--claude` (install para un solo harness), `--sessions-from <ruta>` (si moviste el proyecto). Código de salida 0 si corrió, 1 con un mensaje claro si no (ruta inexistente, sin sesiones, sin reglas, opción inválida); con `--fail-on-violations`, 1 si hay violaciones verificables.
 
 ### CI en tu repo
 
 ```bash
-fiel analyze --fail-on-violations --no-write
+held analyze --fail-on-violations --no-write
 ```
 
-### Seguridad (hooks y `.fiel/`)
+### Seguridad (hooks y `.held/`)
 
 - Los comandos de hook van escapados con `JSON.stringify`; no usan shell.
 - Stdin del hook tiene tope de 256 KB; JSON inválido → respuesta vacía (fail-open).
 - Solo se inyectan automatizaciones `applied` saneadas (facts acotados, sin globs absolutos).
 - `--json` redacta patrones comunes de tokens en argumentos de violaciones.
-- `.fiel/.gitignore` ignora `automations.json`, `instructions.json`, `last-run.json`, `log.jsonl` y `chat/` para que no se commiteen medidas ni contexto inyectado.
+- `.held/.gitignore` ignora `automations.json`, `instructions.json`, `last-run.json`, `log.jsonl` y `chat/` para que no se commiteen medidas ni contexto inyectado.
 
-**Fiel nunca modifica `AGENTS.md`, `CLAUDE.md` ni `.cursor/rules/`.** Su estado vive en `.fiel/`, con un `.gitignore` propio para el log y el estado de chat.
+**Held nunca modifica `AGENTS.md`, `CLAUDE.md` ni `.cursor/rules/`.** Su estado vive en `.held/`, con un `.gitignore` propio para el log y el estado de chat.
 
 ## Qué es (y qué no es)
 
-| Esto | ¿Fiel? |
+| Esto | ¿Held? |
 |---|---|
-| Skill (`SKILL.md` que el agente lee) | No. Fiel **mide** instrucciones, no las sustituye. |
+| Skill (`SKILL.md` que el agente lee) | No. Held **mide** instrucciones, no las sustituye. |
 | Kit de prompts o de reglas | No. No vende un `AGENTS.md`. |
 | MCP o plugin | No. No vive dentro del chat. |
 | Guardia de seguridad | No. Los hooks **informan**, nunca bloquean ni deniegan herramientas. |
-| **CLI** (`npm i -g` y `fiel analyze`) | **Sí. Ese es el producto.** |
+| **CLI** (`npm i -g` y `held analyze`) | **Sí. Ese es el producto.** |
 
 ## Cómo funciona
 
 ### 1. Qué reglas veía el agente en cada sesión
 
-Juzgar una sesión vieja con las reglas de hoy da resultados falsos. Para cada sesión, Fiel toma su fecha y reconstruye la versión vigente de cada archivo de reglas:
+Juzgar una sesión vieja con las reglas de hoy da resultados falsos. Para cada sesión, Held toma su fecha y reconstruye la versión vigente de cada archivo de reglas:
 
 1. si el archivo está en git, usa el último commit anterior a la sesión (`git log --before` y `git show`);
 2. si no está en git, usa el archivo del disco solo si se modificó antes de la sesión;
-3. si ninguna de las dos aplica, la exposición es **desconocida** y la sesión no se juzga. Fiel no asume.
+3. si ninguna de las dos aplica, la exposición es **desconocida** y la sesión no se juzga. Held no asume.
 
 ### 2. Qué cuenta como violación (determinístico)
 
@@ -122,11 +124,11 @@ Juzgar una sesión vieja con las reglas de hoy da resultados falsos. Para cada s
 | `required_command` | "Always run `npm run lint`" | Terminó una sesión con ediciones y nunca lo corrió |
 | `required_sequence` | "After editing code, verify with `npm test`" | No verificó después de la última edición |
 
-El resto de instrucciones queda como `exposure_only`: se mide su costo en tokens, pero no se juzga con patrones. **Cumple por equivalente**: si el agente corre lo mismo que ejecuta un script (`npm run check` cuando el script ya llama a lint y test), cuenta como cumplido y se lista aparte para que lo revises. Los comandos con `--write` o `--fix` nunca cuentan como verificación. En Claude Code, Fiel además lee `tool_result.is_error`.
+El resto de instrucciones queda como `exposure_only`: se mide su costo en tokens, pero no se juzga con patrones. **Cumple por equivalente**: si el agente corre lo mismo que ejecuta un script (`npm run check` cuando el script ya llama a lint y test), cuenta como cumplido y se lista aparte para que lo revises. Los comandos con `--write` o `--fix` nunca cuentan como verificación. En Claude Code, Held además lee `tool_result.is_error`.
 
 ### 3. Instrucciones del chat y compactación
 
-Fiel extrae de tus mensajes las frases con forma de instrucción ("nunca…", "no toques…", "don't…", "usá X en vez de Y"), descarta las plantillas que el propio harness mete en el mensaje y las compara con el resumen de la compactación:
+Held extrae de tus mensajes las frases con forma de instrucción ("nunca…", "no toques…", "don't…", "usá X en vez de Y"), descarta las plantillas que el propio harness mete en el mensaje y las compara con el resumen de la compactación:
 
 - **Claude Code:** `compact_boundary` y la línea `isCompactSummary` del JSONL;
 - **Cursor:** `compaction/segment_NNN.md`, sección *Summary (curated by compaction step)*.
@@ -135,12 +137,12 @@ Si la instrucción tiene un ancla concreta (una ruta, un comando entre backticks
 
 ### 4. Hooks: hechos, no órdenes
 
-`fiel install` registra cuatro hooks por harness. Todos fallan en abierto: si algo sale mal, devuelven vacío y el agente sigue.
+`held install` registra cuatro hooks por harness. Todos fallan en abierto: si algo sale mal, devuelven vacío y el agente sigue.
 
 | Momento | Claude Code | Cursor |
 |---|---|---|
-| Inicio de sesión | `SessionStart`: hechos medidos por Fiel | `sessionStart`: igual |
-| Mensaje del usuario | `UserPromptSubmit`: guarda tus instrucciones en `.fiel/chat/` | `beforeSubmitPrompt`: igual |
+| Inicio de sesión | `SessionStart`: hechos medidos por Held | `sessionStart`: igual |
+| Mensaje del usuario | `UserPromptSubmit`: guarda tus instrucciones en `.held/chat/` | `beforeSubmitPrompt`: igual |
 | Antes de compactar | `PreCompact`: le pide al resumen que las conserve textuales | `preCompact`: marca la conversación |
 | Después de compactar | `SessionStart` con `source=compact`: las reinyecta | siguiente `postToolUse`: las reinyecta una vez |
 | Lectura de un archivo | `PostToolUse` (`Read`): hecho sobre esa ruta | `postToolUse`: igual |
@@ -149,15 +151,15 @@ Cada hook usa solo los campos que su harness acepta: en Cursor, solo `sessionSta
 
 ### 5. Jev: juez opcional detrás de una compuerta medida
 
-[Jev](https://github.com/feder-cr/jev) es un modelo local de CPU que responde sí o no con una probabilidad. Fiel lo usa solo para lo que los patrones no pueden ver: reglas `exposure_only` con forma de instrucción y frases del chat sin ancla. **No es el centro del producto y viene apagado.** Para encenderlo:
+[Jev](https://github.com/feder-cr/jev) es un modelo local de CPU que responde sí o no con una probabilidad. Held lo usa solo para lo que los patrones no pueden ver: reglas `exposure_only` con forma de instrucción y frases del chat sin ancla. **No es el centro del producto y viene apagado.** Para encenderlo:
 
 ```bash
 ./jev serve --model-dir /ruta/absoluta/al/modelo   # ver el README de Jev
-fiel jev gate                                       # mide Jev con 48 casos etiquetados a mano
-fiel analyze --judge jev
+held jev gate                                       # mide Jev con 48 casos etiquetados a mano
+held analyze --judge jev
 ```
 
-`fiel jev gate` corre 48 casos (`src/judges/gate-cases.json`), en pares con la misma instrucción y etiquetas opuestas. Elige el umbral con la mitad de los pares y mide en la otra mitad. Una tarea se enciende solo si en la mitad de prueba logra **precisión ≥ 0,9 y recall ≥ 0,15**. Lo que reporta Jev sale en una sección aparte, con su probabilidad, y nunca se mezcla con las violaciones determinísticas.
+`held jev gate` corre 48 casos (`src/judges/gate-cases.json`), en pares con la misma instrucción y etiquetas opuestas. Elige el umbral con la mitad de los pares y mide en la otra mitad. Una tarea se enciende solo si en la mitad de prueba logra **precisión ≥ 0,9 y recall ≥ 0,15**. Lo que reporta Jev sale en una sección aparte, con su probabilidad, y nunca se mezcla con las violaciones determinísticas.
 
 Medición real del 22 nov 2026 con `jevos-v5` (archivo completo con la probabilidad de cada caso en [`docs/jev-gate.json`](docs/jev-gate.json)):
 
@@ -175,7 +177,7 @@ Dos notas honestas:
 
 ### Reglas verificables: 4 rondas, 19 sesiones reales de Cursor
 
-Repo trampa `fiel-demo-tienda` (Node, sin dependencias, `AGENTS.md` en git). Tareas que no mencionan las reglas. Hoja de verdad revisada a mano contra cada `tool_use`.
+Repo trampa `held-demo-tienda` (Node, sin dependencias, `AGENTS.md` en git). Tareas que no mencionan las reglas. Hoja de verdad revisada a mano contra cada `tool_use`.
 
 | Ronda | Modelo | Sesiones | Violaciones reales | Reportadas | Precisión | Recall |
 |---|---|---|---|---|---|---|
@@ -184,7 +186,7 @@ Repo trampa `fiel-demo-tienda` (Node, sin dependencias, `AGENTS.md` en git). Tar
 | 3. "Rápido, sin tests" | `composer-2.5-fast` | 5 | 7 | 7 | 1,0 | 1,0 |
 | 4. Trampas dirigidas (generated, `rm -rf`, `.cursor/rules`) | `gemini-3-flash`, `grok-4.6` | 4 | 4 | 4 | 1,0 | 1,0 |
 
-Los cinco tipos verificables tienen al menos un verdadero positivo en una sesión real. La evaluación encontró dos errores de Fiel, y los dos se corrigieron:
+Los cinco tipos verificables tienen al menos un verdadero positivo en una sesión real. La evaluación encontró dos errores de Held, y los dos se corrigieron:
 
 - `npm run check` (que ya corre lint y test) se marcaba como 5 violaciones; de ahí salió el **cumple por equivalente**;
 - `rm -rf /ruta/absoluta/data` no se reconocía como `rm -rf data`.
@@ -193,7 +195,7 @@ Las 5 sesiones de la ronda 1 están en [`examples/demo-tienda/cursor/`](examples
 
 ### Proyecto real (Pymesolve)
 
-En 5 sesiones juzgables de un proyecto con `AGENTS.md` en git, Fiel encontró 2 violaciones reales de "Don't edit generated code: `app-lib/clients/*`". El agente había agregado a mano un cliente al código que Scaffold regenera. Las otras 25 sesiones en disco no se juzgaron: venían de carpetas borradas o de reglas sin historial y modificadas después. Fiel las omite y dice por qué.
+En 5 sesiones juzgables de un proyecto con `AGENTS.md` en git, Held encontró 2 violaciones reales de "Don't edit generated code: `app-lib/clients/*`". El agente había agregado a mano un cliente al código que Scaffold regenera. Las otras 25 sesiones en disco no se juzgaron: venían de carpetas borradas o de reglas sin historial y modificadas después. Held las omite y dice por qué.
 
 ### Compactación en historiales reales
 
@@ -202,12 +204,12 @@ De 106 sesiones de Cursor en disco, 8 tuvieron compactación. Entre las instrucc
 ## Arquitectura
 
 ```text
-bin/fiel.mjs               entrada (shebang)
+bin/held.mjs               entrada (shebang)
 src/cli/                   args, comandos, formato y ayuda
 src/readers/               cursor.mjs, claude.mjs, projects.mjs (transcripts → eventos comunes)
 src/analyzers/             extractor (5 tipos), exposure (git/mtime), compliance, equivalence,
                            directives (instrucciones del chat), compaction
-src/suggest.mjs            propuestas → .fiel/automations.json
+src/suggest.mjs            propuestas → .held/automations.json
 src/hooks/runtime.mjs      lógica de los hooks de Cursor y Claude Code
 src/install.mjs            merge idempotente de .cursor/hooks.json y .claude/settings.json
 src/judges/                jev.mjs (cliente HTTP), gate.mjs (compuerta), judge.mjs, gate-cases.json
@@ -227,7 +229,7 @@ Los dos lectores producen los mismos eventos (`user_text`, `tool_use` con `famil
 
 ## Cómo se usaron las herramientas de IA
 
-Fiel se construyó con Cursor (agente con Claude y otros modelos) durante el hackathon. La IA escribió la mayor parte del código y de las pruebas, a partir de una especificación escrita a mano ([BUILD_BRIEF.md](BUILD_BRIEF.md)). Las decisiones de producto (qué medir, qué no hacer, la compuerta de Jev) y la revisión de cada hoja de verdad fueron humanas. Las sesiones de evaluación las corrieron otros modelos (`composer-2.5-fast`, `gemini-3-flash`, `grok-4.6`) dentro de Cursor, y esos transcripts son los datos que Fiel analiza.
+Held se construyó con Cursor (agente con Claude y otros modelos) durante el hackathon. La IA escribió la mayor parte del código y de las pruebas, a partir de una especificación escrita a mano ([BUILD_BRIEF.md](BUILD_BRIEF.md)). Las decisiones de producto (qué medir, qué no hacer, la compuerta de Jev) y la revisión de cada hoja de verdad fueron humanas. Las sesiones de evaluación las corrieron otros modelos (`composer-2.5-fast`, `gemini-3-flash`, `grok-4.6`) dentro de Cursor, y esos transcripts son los datos que Held analiza.
 
 ## Desarrollo
 

@@ -54,7 +54,7 @@ export async function doctor({
     required: false,
     ok: isGitRepo(cwd),
     detail: isGitRepo(cwd)
-      ? "repo git: Fiel puede reconstruir la versión de las reglas por fecha"
+      ? "repo git: Held puede reconstruir la versión de las reglas por fecha"
       : "sin git: solo se juzgan sesiones posteriores al mtime del archivo de reglas",
   });
 
@@ -63,8 +63,8 @@ export async function doctor({
   const hookDetail = hooks.any
     ? `Cursor ${hooks.cursor.installed ? hooks.cursor.events.join(", ") : "—"}; Claude ${hooks.claude.installed ? hooks.claude.events.join(", ") : "—"}`
     : appliedPins > 0
-      ? `${appliedPins} hechos aplicados en .fiel/ pero sin hooks: corre \`fiel install\` para que lleguen al chat`
-      : "sin hooks (después de \`fiel apply\`, corre \`fiel install\`)";
+      ? `${appliedPins} hechos aplicados en .held/ pero sin hooks: corre \`held install\` para que lleguen al chat`
+      : "sin hooks (después de \`held apply\`, corre \`held install\`)";
   checks.push({
     name: "hooks",
     required: false,
@@ -83,7 +83,7 @@ export async function doctor({
       ? `opcional, no responde en ${jevUrl()} (el análisis determinístico no lo necesita)`
       : gate
         ? `responde; compuerta: ${passed.length > 0 ? `encendido para ${passed.join(", ")}` : "apagado en todas las tareas"}`
-        : "responde, pero falta medirlo: corre `fiel jev gate`",
+        : "responde, pero falta medirlo: corre `held jev gate`",
   });
 
   return {
@@ -97,15 +97,15 @@ export async function doctor({
 }
 
 export function formatDoctor(report) {
-  const lines = ["fiel doctor", ""];
+  const lines = ["held doctor", ""];
   for (const check of report.checks) {
     lines.push(`${check.ok ? "ok" : check.required ? "!!" : ".."}  ${check.name}: ${check.detail}`);
   }
   lines.push("");
   const hooksCheck = report.checks.find((check) => check.name === "hooks");
-  lines.push(report.ok ? "Listo para `fiel analyze`." : "Falta algo marcado con !!. El resto son avisos.");
+  lines.push(report.ok ? "Listo para `held analyze`." : "Falta algo marcado con !!. El resto son avisos.");
   if (hooksCheck && !hooksCheck.ok) {
-    lines.push("Siguiente paso: `fiel install` para cerrar el loop medir → apply → hooks.");
+    lines.push("Siguiente paso: `held install` para cerrar el loop medir → apply → hooks.");
   }
   return lines.join("\n");
 }

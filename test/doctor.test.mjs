@@ -22,5 +22,5 @@ test("doctor exige Node 20 y sesiones; git, reglas y Jev son avisos", async () =
   assert.equal(ready.ok, true);
   assert.match(ready.checks.find((check) => check.name === "sesiones").detail, /1 de Claude Code/);
   assert.equal(ready.checks.find((check) => check.name === "jev").ok, false);
-  assert.match(formatDoctor(ready), /Listo para `fiel analyze`/);
+  assert.match(formatDoctor(ready), /Listo para `held analyze`/);
 });

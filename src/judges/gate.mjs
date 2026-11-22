@@ -11,7 +11,7 @@ export function loadCases() {
   return JSON.parse(readFileSync(new URL("./gate-cases.json", import.meta.url), "utf8")).cases;
 }
 
-// Positive = what Fiel would report: a violation, or an instruction lost.
+// Positive = what Held would report: a violation, or an instruction lost.
 export function positiveScore(task, probability) {
   return task === "preserved" ? 1 - probability : probability;
 }

@@ -184,12 +184,12 @@ export function formatSessionsList(project) {
     const viol = vcount > 0 ? red(` · ${vcount} violaciones`) : dim(" · 0 violaciones");
     lines.push(`  ${shortId(session.sessionId)}  ${session.harness}  ${date} UTC  ${mark}${viol}`);
   }
-  lines.push("", dim("Corre `fiel analyze` para el desglose por regla."));
+  lines.push("", dim("Corre `held analyze` para el desglose por regla."));
   return lines.join("\n");
 }
 
 export function formatReport(result, { version, writtenFile, deltas = null }) {
-  const lines = [bold(`fiel ${version} · cumplimiento de instrucciones (Cursor y Claude Code)`), ""];
+  const lines = [bold(`held ${version} · cumplimiento de instrucciones (Cursor y Claude Code)`), ""];
   result.projects.forEach((project, index) => {
     lines.push(formatProject(project, { delta: deltas?.[index] ?? null }), "");
   });
@@ -211,7 +211,7 @@ export function formatReport(result, { version, writtenFile, deltas = null }) {
 }
 
 export function formatAutomations(store) {
-  if (store.automations.length === 0) return "  Automatizaciones: ninguna. Corre `fiel suggest` y `fiel apply <id>`.";
+  if (store.automations.length === 0) return "  Automatizaciones: ninguna. Corre `held suggest` y `held apply <id>`.";
   const lines = [`  Automatizaciones (${store.automations.length}):`];
   for (const item of store.automations) {
     lines.push(dim(`    ${item.id} ${item.status} ${item.kind} @ ${item.trigger} · ${truncate(item.fact, 72)}`));
@@ -228,7 +228,7 @@ export function formatSuggestions(suggestions) {
   }
   lines.push(
     "",
-    "Guarda en disco con `fiel suggest --save`, aplica con `fiel apply <id>`, luego `fiel install`. Nunca toca AGENTS.md.",
+    "Guarda en disco con `held suggest --save`, aplica con `held apply <id>`, luego `held install`. Nunca toca AGENTS.md.",
   );
   return lines.join("\n");
 }

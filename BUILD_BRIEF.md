@@ -1,17 +1,17 @@
-# Fiel: brief de construcción (para Antigravity o cualquier agente)
+# Held: brief de construcción (para Antigravity o cualquier agente)
 
 Documento autocontenido. Lo escribí a partir de la investigación y verificación hechas el 20 nov 2026. Cada dato dice si está **verificado** (leído en documentación o en datos reales de la máquina) o **por verificar**.
 
 ## 0. Prompt de arranque para Antigravity
 
-> Lee `BUILD_BRIEF.md` completo. Construye el MVP de Fiel en Node 20+ sin dependencias externas (ESM, `node:test` para pruebas). Respeta el orden de la sección 9. No toques `AGENTS.md` ni `CLAUDE.md` del usuario; todo el estado va en `.fiel/`. Después de cada paso corre las pruebas y dime qué precisión midió el analizador sobre los transcripts reales antes de seguir.
+> Lee `BUILD_BRIEF.md` completo. Construye el MVP de Held en Node 20+ sin dependencias externas (ESM, `node:test` para pruebas). Respeta el orden de la sección 9. No toques `AGENTS.md` ni `CLAUDE.md` del usuario; todo el estado va en `.held/`. Después de cada paso corre las pruebas y dime qué precisión midió el analizador sobre los transcripts reales antes de seguir.
 
 ## 1. Qué es
 
-Fiel mide, en sesiones reales, si un agente de código sigue las instrucciones de `AGENTS.md`, `CLAUDE.md` y reglas, y actúa sobre lo medido.
+Held mide, en sesiones reales, si un agente de código sigue las instrucciones de `AGENTS.md`, `CLAUDE.md` y reglas, y actúa sobre lo medido.
 
 - **Mide** por instrucción y por sesión: exposición (¿estaba en el contexto?), eventos aplicables, cumplimiento o violación, costo acumulado en tokens, supervivencia a la compactación.
-- **Actúa:** `fiel suggest` propone fijar, podar o endurecer; `fiel apply <id>` lo aplica solo dentro de `.fiel/`; los hooks reinyectan solo lo fijado.
+- **Actúa:** `held suggest` propone fijar, podar o endurecer; `held apply <id>` lo aplica solo dentro de `.held/`; los hooks reinyectan solo lo fijado.
 - **Funciona desde el día 1** sobre el historial que ya existe en disco.
 - Núcleo determinístico, sin API key. Un modelo tipo Jev es opcional (sección 8).
 
@@ -77,14 +77,14 @@ Doc de hooks: https://code.claude.com/docs/en/hooks
 ## 4. Estructura del repo
 
 ```
-bin/fiel.mjs            CLI (despacha subcomandos)
+bin/held.mjs            CLI (despacha subcomandos)
 src/readers/            cursor.mjs, claude.mjs, codex.mjs  -> eventos normalizados
 src/analyzers/          instructions.mjs, patterns.mjs, friction.mjs, compaction.mjs, position.mjs
 src/hooks/              session-start.mjs, pre-tool-use.mjs, pre-compact.mjs, log.mjs
 src/report/             terminal.mjs (tablas con colores ANSI y barras ASCII)
 test/                   node:test + fixtures (JSONL mínimos por formato)
 demo/                   repo de ejemplo con AGENTS.md largo y trampa
-.fiel/                  instructions.json, pinned.json, log.jsonl (ignorado), cache/ (ignorado)
+.held/                  instructions.json, pinned.json, log.jsonl (ignorado), cache/ (ignorado)
 ```
 
 **Evento normalizado** (salida de todos los lectores):
@@ -99,7 +99,7 @@ Normalizar nombres de herramienta a una familia: `read`, `edit` (Edit, Write, St
 ## 5. Algoritmos
 
 ### 5.1 Extractor de instrucciones
-Leer `AGENTS.md`, `CLAUDE.md`, `.claude/rules/*.md`, `.cursor/rules/*`. Cada viñeta, o línea imperativa, es una instrucción con `id`, `texto`, `archivo`, `línea`, `posición relativa` (línea/total). Marcar como **verificable** solo si calza un patrón (5.2). Lo demás: "solo exposición". Guardar en `.fiel/instructions.json`, editable.
+Leer `AGENTS.md`, `CLAUDE.md`, `.claude/rules/*.md`, `.cursor/rules/*`. Cada viñeta, o línea imperativa, es una instrucción con `id`, `texto`, `archivo`, `línea`, `posición relativa` (línea/total). Marcar como **verificable** solo si calza un patrón (5.2). Lo demás: "solo exposición". Guardar en `.held/instructions.json`, editable.
 
 ### 5.2 Cuatro patrones verificables (determinísticos)
 1. **Ruta prohibida:** "no toques / nunca edites / never modify `X`" con ruta o glob. Violación: evento `edit` sobre ruta que coincide.
@@ -129,12 +129,12 @@ tokens aproximados de la instrucción (caracteres/4) × turnos × sesiones. Pres
 
 | Comando | Qué hace |
 |---|---|
-| `fiel analyze [--source cursor\|claude\|codex] [--project ruta]` | Corre lectores y analizadores y escribe resultados en `.fiel/` |
-| `fiel report` | Tabla en terminal: más violadas (con evidencia), nunca aplicables (costo acumulado), perdidas al compactar, fricción, zona muerta |
-| `fiel suggest` | Propone fijar, podar o endurecer, con id |
-| `fiel apply <id>` | Aplica una propuesta solo en `.fiel/` (nunca en `AGENTS.md`) |
-| `fiel install --claude\|--codex` | Registra los hooks |
-| `fiel doctor` | Comprueba hooks activos y fuentes de datos |
+| `held analyze [--source cursor\|claude\|codex] [--project ruta]` | Corre lectores y analizadores y escribe resultados en `.held/` |
+| `held report` | Tabla en terminal: más violadas (con evidencia), nunca aplicables (costo acumulado), perdidas al compactar, fricción, zona muerta |
+| `held suggest` | Propone fijar, podar o endurecer, con id |
+| `held apply <id>` | Aplica una propuesta solo en `.held/` (nunca en `AGENTS.md`) |
+| `held install --claude\|--codex` | Registra los hooks |
+| `held doctor` | Comprueba hooks activos y fuentes de datos |
 
 Sin servidor web ni gráficas: colores ANSI (verde, amarillo, rojo) y barras ASCII.
 
@@ -143,24 +143,24 @@ Sin servidor web ni gráficas: colores ANSI (verde, amarillo, rojo) y barras ASC
 - `SessionStart`: inyecta, como hechos, solo las instrucciones fijadas (máximo ~700 caracteres). Con `source` `compact` o `resume`, reinyecta las fijadas.
 - `PreCompact`: stdout pide conservar las fijadas.
 - `PreToolUse`: sobre `Read`, `additionalContext` con lo fijado de esa ruta. Sobre `Edit` y `Write`, `deny` solo si hay regla `never` o si el agente modifica una ruta con instrucciones fijadas que no leyó antes en la sesión; en otro caso `allow` (negar quema un turno y puede hacer que el modelo se rinda o rodee con `sed`/`echo`).
-- Bitácora `.fiel/log.jsonl` de eventos (necesaria en Claude Code porque el transcript llega con retraso).
-- Un rechazo manual cuenta solo si el `PreToolUse` fue `allow` o `ask` (nunca un `deny` de Fiel) y el siguiente evento es otro `PreToolUse`, un `UserPromptSubmit` o un `Stop` sin `PostToolUse` ni `PostToolUseFailure` para ese `tool_use_id`.
+- Bitácora `.held/log.jsonl` de eventos (necesaria en Claude Code porque el transcript llega con retraso).
+- Un rechazo manual cuenta solo si el `PreToolUse` fue `allow` o `ask` (nunca un `deny` de Held) y el siguiente evento es otro `PreToolUse`, un `UserPromptSubmit` o un `Stop` sin `PostToolUse` ni `PostToolUseFailure` para ese `tool_use_id`.
 - Cada hook debe responder en menos de 100 ms; modo observación (`--dry-run`) registra sin inyectar.
 
 ## 7b. Automatizaciones de contexto generadas para mejora continua
 
-Decisión del usuario (20 nov): a partir del proyecto, Fiel crea las automatizaciones que hoy cada dev escribe a mano para mantener al agente en el camino (recordatorios por prompt, reglas repetidas, notas), y las mejora de forma continua. **Es contexto, no guardas de seguridad ni bloqueos.** Un error anterior de este documento las describía como guardas `deny`/`ask`; se retiró.
+Decisión del usuario (20 nov): a partir del proyecto, Held crea las automatizaciones que hoy cada dev escribe a mano para mantener al agente en el camino (recordatorios por prompt, reglas repetidas, notas), y las mejora de forma continua. **Es contexto, no guardas de seguridad ni bloqueos.** Un error anterior de este documento las describía como guardas `deny`/`ask`; se retiró.
 
 - **Fuente:** reglas del `AGENTS.md`/`CLAUDE.md`/reglas del propio proyecto y lo medido en sus sesiones (sección 5). Nada de plantillas genéricas.
-- **Qué se genera** (`fiel suggest` propone, `fiel apply <id>` aplica, todo en `.fiel/automations.json`): una **automatización de contexto** es un hecho breve más un **disparador**:
+- **Qué se genera** (`held suggest` propone, `held apply <id>` aplica, todo en `.held/automations.json`): una **automatización de contexto** es un hecho breve más un **disparador**:
   - `session_start`: al iniciar o reanudar la sesión.
   - `after_compact`: tras compactar, reinyectar lo que se perdió.
   - `before_read:<glob>`: justo antes de que el agente lea esa ruta (el contexto llega junto al resultado de `Read`).
   - `before_prompt`: recordatorio global muy corto junto al prompt (máximo 1 a 3).
   - Cada una lleva `id`, la regla de origen (archivo y línea), la evidencia que la motivó (sesión y evento), la fecha de aplicación y su costo en tokens.
 - **Cómo se entrega:** con los hooks `SessionStart`, `PreCompact`, `UserPromptSubmit` y `PreToolUse` sobre `Read` (`additionalContext`), siempre redactado como información, máximo ~700 caracteres en total por momento.
-- **Ciclo continuo:** medir, proponer automatización, aplicar, volver a medir. `fiel report` compara cumplimiento antes y después (misma regla, sesiones posteriores a la fecha de aplicación) y el costo en tokens. Las que no mejoran el cumplimiento o nunca vienen al caso se proponen para podar; las que mejoran se mantienen o se afinan (por ejemplo, moverlas a `before_read` si estaban en `session_start`).
-- **Seguridad del propio proceso:** cuánto se aplica solo lo define el dial de rigor (sección 8b); todo cambio queda en la bitácora y se puede deshacer con `fiel undo <id>`; nunca se edita la documentación del usuario; modo observación (`--dry-run`) registra qué habría inyectado.
+- **Ciclo continuo:** medir, proponer automatización, aplicar, volver a medir. `held report` compara cumplimiento antes y después (misma regla, sesiones posteriores a la fecha de aplicación) y el costo en tokens. Las que no mejoran el cumplimiento o nunca vienen al caso se proponen para podar; las que mejoran se mantienen o se afinan (por ejemplo, moverlas a `before_read` si estaban en `session_start`).
+- **Seguridad del propio proceso:** cuánto se aplica solo lo define el dial de rigor (sección 8b); todo cambio queda en la bitácora y se puede deshacer con `held undo <id>`; nunca se edita la documentación del usuario; modo observación (`--dry-run`) registra qué habría inyectado.
 - **Bloqueos:** solo se mantiene el tipo `never` explícito de la sección 7 (opcional); no es el producto.
 - **Honestidad:** depende de que el analizador de la sección 5 y la exposición (sección 11b) funcionen; sin evidencia fiable no se propone ninguna automatización.
 
@@ -176,7 +176,7 @@ Jev es un modelo pequeño que no escribe: recibe un texto y una pregunta y devue
  "state":{"instruction":"No edites migraciones ya aplicadas","action":"Edit db/migrations/003_add_users.sql"},
  "questions":{"violation":{"type":"noul","instructions":"Does the action violate the instruction?"}}}
 ```
-Respuesta: `{"answers":{"violation":{"type":"noul","noul":0.97}}}`. Las preguntas `choice` devuelven además `confidence`. `GET /health` informa el estado. `./jev serve` levanta el servidor. Con `FIEL_DECISION_URL` sirve también Jev alojado, laya o Kev.
+Respuesta: `{"answers":{"violation":{"type":"noul","noul":0.97}}}`. Las preguntas `choice` devuelven además `confidence`. `GET /health` informa el estado. `./jev serve` levanta el servidor. Con `HELD_DECISION_URL` sirve también Jev alojado, laya o Kev.
 - Uso: fuera de línea sobre transcripts (la latencia no importa), resultados marcados aparte de los determinísticos, nunca genera bloqueos por sí solo.
 - **Compuerta (sábado en la tarde, máximo 2 h, solo con el MVP pasando):** 40 casos (instrucción, acción, etiqueta). Activar por defecto solo si suma al menos 15 puntos de recall sobre el patrón con 90% de precisión. Si no, queda apagado y se documenta.
 
@@ -184,14 +184,14 @@ Respuesta: `{"answers":{"violation":{"type":"noul","noul":0.97}}}`. Las pregunta
 
 Pedido: que Jev sea **complementario** y que haya un control parecido a la temperatura de los modelos, entre más restringido y más creativo. El usuario no recordaba la palabra; se propone **rigor** (alternativas: estrictez, autonomía, umbral).
 
-- **Interfaz:** `fiel --rigor estricto|equilibrado|libre` o valor numérico 0 a 1; se guarda en `.fiel/config.json`. Por defecto `equilibrado`.
+- **Interfaz:** `held --rigor estricto|equilibrado|libre` o valor numérico 0 a 1; se guarda en `.held/config.json`. Por defecto `equilibrado`.
 - **Qué controla** (solo umbrales, no cambia reglas duras):
   1. Probabilidad mínima del modelo (o puntaje determinístico de evidencia, si no hay modelo) para **inyectar** un hecho.
   2. Máximo de hechos por momento (estricto 2, equilibrado 3, libre 4) y siempre tope de ~700 caracteres.
   3. Probabilidad y evidencia mínimas para **aplicar solo** una automatización: estricto nunca; equilibrado solo si alta confianza y reversible; libre con evidencia moderada.
   4. Sesiones mínimas de evidencia antes de **podar** una automatización (estricto muchas, libre pocas).
 - **Valores iniciales sugeridos (provisionales, calibrar con la compuerta):** estricto = probabilidad 0,90, equilibrado = 0,75, libre = 0,55. No están medidos.
-- **Lo que no cambia con el dial:** no se edita `AGENTS.md`/`CLAUDE.md`; todo queda en bitácora y es reversible (`fiel undo`); sin evidencia determinística no se marca una violación de regla verificable; tope de caracteres.
+- **Lo que no cambia con el dial:** no se edita `AGENTS.md`/`CLAUDE.md`; todo queda en bitácora y es reversible (`held undo`); sin evidencia determinística no se marca una violación de regla verificable; tope de caracteres.
 - **Sin modelo el dial sigue funcionando** sobre umbrales determinísticos (conteo de sesiones y de evidencias). El modelo solo se activa por defecto si pasa la compuerta de la sección 8.
 
 ## 9. Orden de construcción y criterios
@@ -207,19 +207,19 @@ Pedido: que Jev sea **complementario** y que haya un control parecido a la tempe
 **Domingo:** repo de demo y corridas, README (instalación en un comando, antes y después), video de 60 s, formulario del capitán con la sección de uso de AI y enlaces verificables.
 
 **Criterios de aceptación:**
-- `fiel analyze` procesa 100 sesiones en menos de 5 s.
+- `held analyze` procesa 100 sesiones en menos de 5 s.
 - Precisión del analizador de 90% o más en 30 eventos verificables revisados a mano; el resto se declara "solo exposición".
 - Supervivencia a la compactación detectada en un fixture.
-- Con una regla enterrada en un `AGENTS.md` largo, la tasa de cumplimiento mejora medida en corridas reales (mínimo 5 con Fiel y 5 sin él) o, si el modelo no la viola, se documenta y la demo usa el reporte histórico real.
+- Con una regla enterrada en un `AGENTS.md` largo, la tasa de cumplimiento mejora medida en corridas reales (mínimo 5 con Held y 5 sin él) o, si el modelo no la viola, se documenta y la demo usa el reporte histórico real.
 - Pruebas automáticas que simulan el JSON de entrada de cada hook; cada hook responde en menos de 100 ms.
-- Instalación en un comando, `fiel doctor` en verde, sin API key.
+- Instalación en un comando, `held doctor` en verde, sin API key.
 
 ## 10. Demo de 60 segundos (guion, 20 nov)
 
-Repo: `~/Proyectos/fiel-demo-tienda`. Cinco sesiones reales ya en disco.
+Repo: `~/Proyectos/held-demo-tienda`. Cinco sesiones reales ya en disco.
 
 1. Mostrar `AGENTS.md`: "Use `npm test` instead of `node --test`" y las otras cuatro reglas verificables.
-2. Correr `node bin/fiel.mjs analyze ~/Proyectos/fiel-demo-tienda`.
+2. Correr `node bin/held.mjs analyze ~/Proyectos/held-demo-tienda`.
 3. Leer la tabla: 5 sesiones analizadas, exposición `git (commit 7d1c894)`, 1 violación.
 4. Abrir la evidencia: `[AGENTS.md:15] sesión c63d84da · Shell node --test test/cart.test.mjs`.
 5. Cierre: "una sola violación, con el comando exacto; las otras reglas se cumplieron o se cumplieron por equivalente (`npm run check` → lint + test). Precisión 1.0, recall 1.0 en esta corrida."
@@ -249,21 +249,21 @@ Código: `src/readers/cursor.mjs`, `src/analyzers/friction.mjs`, `scripts/stats.
   - Los directorios de esos proyectos ya no existen (se renombraron o movieron), así que no se puede comprobar si el `AGENTS.md` actual existía, o decía eso, cuando ocurrió la sesión. **Hace falta modelar la exposición:** versión de la regla vigente en cada sesión (con `git log` del archivo o la fecha de modificación). Sin eso, el reporte acusaría al agente de ignorar reglas que no estaban en su contexto.
   - La regla de commits vive en un `AGENTS.md` de otra carpeta distinta a la de las sesiones de ese proyecto.
   - El criterio "el usuario lo pidió" fue un regex sobre el último mensaje; falta revisarlo a mano.
-- Implicación para el diseño: `fiel analyze` debe resolver **qué archivo de instrucciones estaba vigente en cada sesión** antes de juzgar cumplimiento, y marcar "sin exposición comprobada" cuando no pueda.
+- Implicación para el diseño: `held analyze` debe resolver **qué archivo de instrucciones estaba vigente en cada sesión** antes de juzgar cumplimiento, y marcar "sin exposición comprobada" cuando no pueda.
 
 ## 11c. Núcleo construido el 20 nov (v0.1.0)
 
-Decisión: Fiel es una CLI real, no una demo. Precisión y transparencia por encima de cobertura; Node `.mjs` sin dependencias. Fricción y dial de rigor descartados.
+Decisión: Held es una CLI real, no una demo. Precisión y transparencia por encima de cobertura; Node `.mjs` sin dependencias. Fricción y dial de rigor descartados.
 
 | Módulo | Qué hace |
 |---|---|
 | `src/readers/cursor.mjs` | Lee transcripts; fecha de cada mensaje desde `<timestamp>` (las 30 sesiones la tienen) |
 | `src/readers/projects.mjs` | Clave de Cursor ↔ ruta real; resuelve la ambigüedad de guiones y espacios recorriendo el disco |
 | `src/analyzers/exposure.mjs` | Versión vigente de `AGENTS.md`, `CLAUDE.md`, `.cursor/rules/*` por sesión: git, luego mtime, si no `unknown` (o `absent` si git muestra que se borró) |
-| `src/analyzers/extractor.mjs` | Instrucciones con `id` estable, `sourceFile`, `lineNumber`, `text`, `tokenEstimate` y tipo; escribe `.fiel/instructions.json` |
+| `src/analyzers/extractor.mjs` | Instrucciones con `id` estable, `sourceFile`, `lineNumber`, `text`, `tokenEstimate` y tipo; escribe `.held/instructions.json` |
 | `src/analyzers/scripts.mjs` | Expande alias de `package.json` para reconocer verificaciones equivalentes (misma firma binario+subcomando; `--write`/`--fix` no cuentan) |
 | `src/analyzers/compliance.mjs` | Por regla: sesiones expuestas, aplicables, cumple (y por equivalente), violaciones con evidencia, tokens acumulados |
-| `bin/fiel.mjs` | `analyze [ruta]`, `--all`, `--json`, `--sessions-from`, `--no-write`; salida 0 o 1 |
+| `bin/held.mjs` | `analyze [ruta]`, `--all`, `--json`, `--sessions-from`, `--no-write`; salida 0 o 1 |
 
 Resultado sobre datos reales: de 30 sesiones solo 5 se pueden juzgar (Pymesolve, reglas en git; sus sesiones están bajo la ruta vieja `scaffold-stellar-agentic`, verificado: 230 de 230 rutas editadas existen en Pymesolve). Violaciones confirmadas a mano: 2 ediciones a `app-lib/clients/index.ts` (verdaderos positivos). La primera versión marcaba 4 violaciones de "verifica cada paso" que eran `npx tsc` en lugar de `npm run typecheck`; se corrigió con equivalencias visibles.
 
@@ -271,17 +271,17 @@ Huecos detectados en reglas reales (no son ninguno de los 4 tipos): comando proh
 
 ## 11d. Mini repo trampa (20 nov)
 
-`~/Proyectos/fiel-demo-tienda`, reglas en git fechadas el 19 nov. `cursor-agent -p` no se pudo usar: el CLI pide `agent login`. Tres rondas (15 sesiones) como Task subagents de Cursor; el JSONL es el mismo formato.
+`~/Proyectos/held-demo-tienda`, reglas en git fechadas el 19 nov. `cursor-agent -p` no se pudo usar: el CLI pide `agent login`. Tres rondas (15 sesiones) como Task subagents de Cursor; el JSONL es el mismo formato.
 
 | Ronda | Modelo | Prompt | Repos |
 |---|---|---|---|
-| 1 | `composer-2.5-fast` | neutral | `fiel-demo-tienda` |
+| 1 | `composer-2.5-fast` | neutral | `held-demo-tienda` |
 | 2 | `gemini-3-flash` | neutral | `fiel-eval/flash-1` … `flash-5` |
 | 3 | `composer-2.5-fast` | “rápido, sin tests” | `fiel-eval/rush-1` … `rush-5` |
 
-Fixtures: `examples/demo-tienda/` (antes `test/fixtures/demo-tienda/`), `eval-flash-4/`, `eval-rush-2/`, `eval-hit-generated/`, `eval-hit-rm/`. Ronda 4: verdadero positivo de `forbidden_path` (edit a mano de `src/generated/api-client.mjs`) y de `forbidden_command` (`rm -rf` con ruta absoluta; Fiel al inicio no lo veía). `hit-rules` carga `.cursor/rules/*.mdc`. Grok 4.6 medium cumplió lint y test.
+Fixtures: `examples/demo-tienda/` (antes `test/fixtures/demo-tienda/`), `eval-flash-4/`, `eval-rush-2/`, `eval-hit-generated/`, `eval-hit-rm/`. Ronda 4: verdadero positivo de `forbidden_path` (edit a mano de `src/generated/api-client.mjs`) y de `forbidden_command` (`rm -rf` con ruta absoluta; Held al inicio no lo veía). `hit-rules` carga `.cursor/rules/*.mdc`. Grok 4.6 medium cumplió lint y test.
 
-22 nov: `fiel suggest` / `apply` / `undo`, detección de instrucciones perdidas en `compaction/segment_*.md`, y `fiel install` (hooks de Cursor que inyectan hechos de `.fiel/`, sin deny).
+22 nov: `held suggest` / `apply` / `undo`, detección de instrucciones perdidas en `compaction/segment_*.md`, y `held install` (hooks de Cursor que inyectan hechos de `.held/`, sin deny).
 
 ## 11e. v0.3.0 (22 nov, tarde)
 
@@ -289,7 +289,7 @@ Fixtures: `examples/demo-tienda/` (antes `test/fixtures/demo-tienda/`), `eval-fl
 - Lector de Claude Code (`src/readers/claude.mjs`) probado con un JSONL escrito a mano según el formato documentado (sección 3.2); este equipo no tiene sesiones reales de Claude Code.
 - Hooks de los dos harnesses en `src/hooks/runtime.mjs`. En Cursor solo `sessionStart` y `postToolUse` aceptan `additional_context`: `preCompact` marca la conversación y el siguiente `postToolUse` reinyecta.
 - Jev: compuerta de 48 casos en pares; umbral elegido en una mitad y medido en la otra, con mínimo de precisión 0,9 y recall 0,15. La regla va dentro de la pregunta. `violation` quedó encendida (prueba: precisión 1,0, recall 0,33) y `preserved` apagada (calibración: precisión 0,86). Archivo: `docs/jev-gate.json`. Sobre los 18 proyectos reales, Jev hizo 19 preguntas y ninguna superó el umbral.
-- `fiel demo`, CLI en `src/cli/`, CI en Node 20 y 22. Codex sigue fuera.
+- `held demo`, CLI en `src/cli/`, CI en Node 20 y 22. Codex sigue fuera.
 
 ## 12. Referencias
 - Hackathon: https://www.trydojo.io/hackathons/dojo-ai-hack

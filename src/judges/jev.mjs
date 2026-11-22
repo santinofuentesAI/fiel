@@ -1,9 +1,10 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
+import { envFirst } from "../env.mjs";
 
 // jevos (https://github.com/feder-cr/jev): local CPU model that answers yes/no
-// questions with a probability. Fiel only uses it where patterns cannot see, and
+// questions with a probability. Held only uses it where patterns cannot see, and
 // only for tasks that passed the gate in gate.mjs.
 
 const DEFAULT_URL = "http://127.0.0.1:8017/v1/systemone";
@@ -25,12 +26,15 @@ export const TASKS = {
 };
 
 export function jevUrl() {
-  return process.env.FIEL_JEV_URL ?? DEFAULT_URL;
+  return envFirst(["HELD_JEV_URL", "FIEL_JEV_URL"], DEFAULT_URL);
 }
 
-export function fielHome() {
-  return process.env.FIEL_HOME ?? join(homedir(), ".fiel");
+export function heldHome() {
+  return envFirst(["HELD_HOME", "FIEL_HOME"], join(homedir(), ".held"));
 }
+
+/** @deprecated */
+export const fielHome = heldHome;
 
 function healthUrl(url) {
   return url.replace(/\/v1\/systemone\/?$/, "/health");
@@ -71,17 +75,24 @@ export async function askJev(task, item, url = jevUrl()) {
 }
 
 export function gateFile() {
-  return join(fielHome(), "jev-gate.json");
+  return join(heldHome(), "jev-gate.json");
 }
 
 export function loadGate() {
-  const file = gateFile();
-  if (!existsSync(file)) return null;
-  try {
-    return JSON.parse(readFileSync(file, "utf8"));
-  } catch {
-    return null;
+  const candidates = [
+    gateFile(),
+    join(homedir(), ".fiel", "jev-gate.json"),
+    join(process.cwd(), "docs", "jev-gate.json"),
+  ];
+  for (const file of candidates) {
+    if (!existsSync(file)) continue;
+    try {
+      return JSON.parse(readFileSync(file, "utf8"));
+    } catch {
+      continue;
+    }
   }
+  return null;
 }
 
 export function saveGate(result) {

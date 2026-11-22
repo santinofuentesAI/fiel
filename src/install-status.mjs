@@ -1,9 +1,9 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
-const MARKER = 'fiel.mjs" hook ';
+const MARKERS = ['held.mjs" hook ', 'fiel.mjs" hook '];
 
-const isFiel = (command) => String(command ?? "").includes(MARKER);
+const isHeldHook = (command) => MARKERS.some((marker) => String(command ?? "").includes(marker));
 
 function readJson(file) {
   try {
@@ -22,7 +22,7 @@ export function harnessHookStatus(projectDir) {
   const cursorConfig = existsSync(cursorFile) ? readJson(cursorFile) : null;
   if (cursorConfig?.hooks) {
     for (const [event, entries] of Object.entries(cursorConfig.hooks)) {
-      if ((entries ?? []).some((entry) => isFiel(entry.command))) {
+      if ((entries ?? []).some((entry) => isHeldHook(entry.command))) {
         cursor.installed = true;
         cursor.events.push(event);
       }
@@ -32,7 +32,7 @@ export function harnessHookStatus(projectDir) {
   const claudeConfig = existsSync(claudeFile) ? readJson(claudeFile) : null;
   if (claudeConfig?.hooks) {
     for (const [event, groups] of Object.entries(claudeConfig.hooks)) {
-      if ((groups ?? []).some((group) => (group.hooks ?? []).some((hook) => isFiel(hook.command)))) {
+      if ((groups ?? []).some((group) => (group.hooks ?? []).some((hook) => isHeldHook(hook.command)))) {
         claude.installed = true;
         claude.events.push(event);
       }

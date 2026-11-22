@@ -69,7 +69,7 @@ export function parseArgs(argv) {
   }
   if (!options.command) return options;
   const names = POSITIONALS[options.command];
-  if (!names) throw new UsageError(`Comando desconocido: ${options.command}. Usa "fiel --help".`);
+  if (!names) throw new UsageError(`Comando desconocido: ${options.command}. Usa "held --help".`);
   if (rest.length > names.length) throw new UsageError(`Argumento de más: ${rest[names.length]}`);
   names.forEach((name, index) => {
     options[name] = rest[index] ?? null;

@@ -1,4 +1,4 @@
-# fiel-demo-tienda
+# held-demo-tienda
 
 Tienda mínima para un demo. Seguí estas reglas.
 

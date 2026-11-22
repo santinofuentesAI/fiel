@@ -17,4 +17,4 @@ jobs:
         with:
           node-version: ${{ matrix.node }}
       - run: npm test
-      - run: node bin/fiel.mjs demo
+      - run: node bin/held.mjs demo

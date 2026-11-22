@@ -90,10 +90,10 @@ test("el id es estable aunque cambie la línea o el formato", () => {
   assert.notEqual(instructionId("AGENTS.md", "x regla"), instructionId("CLAUDE.md", "x regla"));
 });
 
-test("writeInstructions escribe solo en .fiel/instructions.json", () => {
+test("writeInstructions escribe solo en .held/instructions.json", () => {
   const dir = mkdtempSync(join(tmpdir(), "fiel-extractor-"));
   const file = writeInstructions(dir, extractInstructions(AGENTS, "AGENTS.md"), new Date("2026-11-20T00:00:00Z"));
-  assert.equal(file, join(dir, ".fiel", "instructions.json"));
+  assert.equal(file, join(dir, ".held", "instructions.json"));
   const payload = JSON.parse(readFileSync(file, "utf8"));
   assert.equal(payload.version, 1);
   assert.equal(payload.instructions.length, 5);
