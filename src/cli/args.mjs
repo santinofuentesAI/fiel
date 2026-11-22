@@ -4,7 +4,9 @@ const BOOLEAN_FLAGS = {
   "--all": ["all", true],
   "--json": ["json", true],
   "--no-write": ["write", false],
+  "--save": ["save", true],
   "--dry-run": ["dryRun", true],
+  "--fail-on-violations": ["failOnViolations", true],
   "--cursor": ["cursor", true],
   "--claude": ["claude", true],
   "-h": ["help", true],
@@ -18,6 +20,7 @@ const VALUE_FLAGS = { "--sessions-from": "sessionsFrom", "--judge": "judge" };
 export const POSITIONALS = {
   analyze: ["path"],
   report: ["path"],
+  sessions: ["path"],
   suggest: ["path"],
   apply: ["id", "path"],
   undo: ["id", "path"],
@@ -42,6 +45,8 @@ export function parseArgs(argv) {
     version: false,
     sessionsFrom: null,
     judge: null,
+    save: false,
+    failOnViolations: false,
   };
   const rest = [];
   for (let i = 0; i < argv.length; i += 1) {

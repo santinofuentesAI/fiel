@@ -107,7 +107,10 @@ export function mergeSuggestions(store, suggestions) {
 
 export function findAutomation(store, id) {
   if (!id) return null;
-  return store.automations.find((item) => item.id === id || item.id.startsWith(id)) ?? null;
+  const exact = store.automations.find((item) => item.id === id);
+  if (exact) return exact;
+  const matches = store.automations.filter((item) => item.id.startsWith(id));
+  return matches.length === 1 ? matches[0] : null;
 }
 
 export function applySuggestion(store, suggestion, { now = new Date() } = {}) {

@@ -12,7 +12,9 @@ import { askJev, gateFile, jevHealth, jevUrl, loadGate, saveGate } from "../judg
 import { judgeProject } from "../judges/judge.mjs";
 import { loadAutomations, saveAutomations } from "../store.mjs";
 import { applySuggestion, findAutomation, mergeSuggestions, suggestFromAnalysis, undoAutomation } from "../suggest.mjs";
-import { bold, dim, formatAutomations, formatGate, formatReport, formatSuggestions, green } from "./format.mjs";
+import { diffViolations, loadLastRun, saveLastRun } from "../history.mjs";
+import { parseHookStdin, redactSecrets, resolveHookProjectDir } from "../security.mjs";
+import { bold, dim, formatAutomations, formatGate, formatReport, formatSessionsList, formatSuggestions, green } from "./format.mjs";
 
 const out = (text) => console.log(text);
 const json = (value) => console.log(JSON.stringify(value, null, 2));
@@ -22,10 +24,22 @@ function projectJson(project) {
     projectDir: project.projectDir,
     ruleFiles: project.ruleFiles,
     sessions: project.sessions,
-    rules: project.rules,
-    compaction: { ...project.compaction, unanchored: project.compaction.unanchored.map(({ summary, ...item }) => item) },
+    rules: project.rules.map((rule) => ({
+      ...rule,
+      violations: rule.violations.map((violation) => ({
+        ...violation,
+        argument: violation.argument ? redactSecrets(String(violation.argument)) : violation.argument,
+      })),
+    })),
+    compaction: project.compaction
+      ? { ...project.compaction, unanchored: (project.compaction.unanchored ?? []).map(({ summary, ...item }) => item) }
+      : null,
     judged: project.judged ?? null,
   };
+}
+
+function violationCount(project) {
+  return project.rules.reduce((sum, rule) => sum + rule.violations.length, 0);
 }
 
 function reportJson(result, { version, writtenFile = null, extra = {} }) {
@@ -70,11 +84,24 @@ async function analyze(options, roots = {}) {
 }
 
 export async function analyzeCommand(options, { version }) {
+  const singleProject = !options.all;
+  const projectDir = singleProject ? resolve(options.path ?? process.cwd()) : null;
+  const previous = singleProject && options.write ? loadLastRun(projectDir) : null;
   const { result, writtenFile } = await analyze(options);
-  const automations = options.command === "report" && !options.all ? loadAutomations(result.projects[0].projectDir) : null;
-  if (options.json) return json(reportJson(result, { version, writtenFile, extra: automations ? { automations: automations.automations } : {} }));
-  out(formatReport(result, { version, writtenFile }));
+  const deltas =
+    singleProject && options.command === "report"
+      ? [diffViolations(result.projects[0], previous)]
+      : null;
+  if (singleProject && options.write && result.projects[0]) saveLastRun(projectDir, result.projects[0]);
+  const automations = options.command === "report" && singleProject ? loadAutomations(result.projects[0].projectDir) : null;
+  const extra = { ...(automations ? { automations: automations.automations } : {}), ...(deltas ? { delta: deltas[0] } : {}) };
+  if (options.json) return json(reportJson(result, { version, writtenFile, extra }));
+  out(formatReport(result, { version, writtenFile, deltas }));
   if (automations) out(formatAutomations(automations));
+  if (options.failOnViolations) {
+    const violations = result.projects.reduce((sum, project) => sum + violationCount(project), 0);
+    if (violations > 0) process.exitCode = 1;
+  }
 }
 
 export async function suggestCommand(options, { version }) {
@@ -82,9 +109,16 @@ export async function suggestCommand(options, { version }) {
   const project = result.projects[0];
   const suggestions = suggestFromAnalysis(project);
   const store = mergeSuggestions(loadAutomations(project.projectDir), suggestions);
-  if (options.write) saveAutomations(project.projectDir, store);
-  if (options.json) return json({ version, projectDir: project.projectDir, suggestions, automations: store.automations });
+  if (options.save) saveAutomations(project.projectDir, store);
+  if (options.json) return json({ version, projectDir: project.projectDir, suggestions, saved: options.save, automations: store.automations });
   out(formatSuggestions(suggestions));
+}
+
+export async function sessionsCommand(options, { version }) {
+  const { result } = await analyze({ ...options, all: false, write: false });
+  const project = result.projects[0];
+  if (options.json) return json({ version, projectDir: project.projectDir, sessions: project.sessions });
+  out(formatSessionsList(project));
 }
 
 export async function applyCommand(options) {
@@ -133,6 +167,8 @@ export async function installCommand(options) {
   }
   if (options.command === "install" && !options.dryRun) {
     out(dim("Los hooks inyectan hechos de .fiel/ y guardan lo que pides en el chat para reinyectarlo tras compactar. No bloquean herramientas."));
+    out(dim("Cursor Cloud Agents no corre hooks al inicio; los hechos @ session_start aplican en sesiones locales."));
+    out(dim("El hook usa CURSOR_PROJECT_DIR / CLAUDE_PROJECT_DIR cuando el IDE los define."));
   }
 }
 
@@ -143,16 +179,8 @@ export async function hookCommand(options) {
   } catch {
     stdin = "";
   }
-  let input = {};
-  try {
-    input = JSON.parse(stdin || "{}");
-  } catch {
-    input = {};
-  }
-  const projectDir =
-    options.harness === "claude"
-      ? process.env.CLAUDE_PROJECT_DIR ?? input.cwd ?? process.cwd()
-      : process.env.CURSOR_PROJECT_DIR ?? input.workspace_roots?.[0] ?? process.cwd();
+  const input = parseHookStdin(stdin);
+  const projectDir = resolveHookProjectDir({ harness: options.harness, input });
   const output = runHook({ harness: options.harness, event: options.event, stdin, projectDir, dryRun: options.dryRun });
   if (output) process.stdout.write(`${output}\n`);
 }

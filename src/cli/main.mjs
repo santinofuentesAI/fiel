@@ -9,6 +9,7 @@ import {
   hookCommand,
   installCommand,
   jevCommand,
+  sessionsCommand,
   suggestCommand,
   undoCommand,
 } from "./commands.mjs";
@@ -24,10 +25,11 @@ Empieza aquí:
 Medir:
   fiel analyze [ruta]            Cumplimiento por regla de AGENTS.md, CLAUDE.md y .cursor/rules, con evidencia
   fiel analyze --all             Todos los proyectos con sesiones en disco
-  fiel report [ruta]             analyze + automatizaciones aplicadas
+  fiel report [ruta]             analyze + delta desde la última corrida + automatizaciones
+  fiel sessions [ruta]           Lista sesiones en disco con harness, fecha y violaciones
 
 Actuar (solo escribe en .fiel/):
-  fiel suggest [ruta]            Propone hechos para reinyectar a partir de lo medido
+  fiel suggest [ruta]            Propone hechos para reinyectar (usa --save para escribir en disco)
   fiel apply <id> [ruta]         Aplica una propuesta
   fiel undo <id> [ruta]          La deshace
   fiel install [ruta]            Hooks de Cursor y Claude Code que inyectan esos hechos
@@ -41,7 +43,9 @@ Juez opcional (Jev, modelo local en CPU):
 
 Opciones:
   --json                         Salida estructurada
+  --fail-on-violations           sale con código 1 si hay violaciones (útil en CI)
   --no-write                     No escribe nada en .fiel/
+  --save                         suggest: guarda propuestas en .fiel/automations.json
   --dry-run                      install/uninstall: muestra el JSON sin escribir
   --cursor, --claude             install/uninstall: solo ese harness (por defecto, los dos)
   --sessions-from <ruta>         Usa las sesiones de otra ruta (si moviste el proyecto)
@@ -61,6 +65,7 @@ const COMMANDS = {
   jev: jevCommand,
   doctor: doctorCommand,
   demo: demoCommand,
+  sessions: sessionsCommand,
 };
 
 export async function main(argv) {
@@ -71,7 +76,8 @@ export async function main(argv) {
     await COMMANDS[options.command](options, { version });
   } catch (error) {
     const known = error instanceof FielError || error instanceof UsageError;
-    console.error(`fiel: ${known ? error.message : `error inesperado: ${error.stack ?? error}`}`);
+    const detail = known ? error.message : process.env.FIEL_DEBUG ? error.stack ?? error : error.message;
+    console.error(`fiel: ${known ? detail : `error inesperado: ${detail}`}`);
     process.exitCode = 1;
   }
 }

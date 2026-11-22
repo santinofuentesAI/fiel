@@ -1,7 +1,10 @@
 import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
-const LOCAL_ONLY = "# Generado por fiel: bitácora y notas de chat son locales\nlog.jsonl\nchat/\n";
+import { sanitizeAutomationsStore } from "./security.mjs";
+
+const LOCAL_ONLY =
+  "# Generado por fiel: estado local del proyecto (no commitear medidas ni automatizaciones)\nlog.jsonl\nchat/\ninstructions.json\nautomations.json\nlast-run.json\n";
 
 const empty = () => ({ version: 1, automations: [] });
 
@@ -28,7 +31,7 @@ export function readJson(file, fallback) {
 
 export function loadAutomations(projectDir) {
   const parsed = readJson(join(fielDir(projectDir), "automations.json"), empty);
-  return { version: 1, automations: Array.isArray(parsed.automations) ? parsed.automations : [] };
+  return sanitizeAutomationsStore(parsed);
 }
 
 export function saveAutomations(projectDir, store) {

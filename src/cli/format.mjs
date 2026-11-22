@@ -134,7 +134,29 @@ function printJudge(project, lines) {
   lines.push(dim(`    ${judged.checked} ${judged.checked === 1 ? "pregunta" : "preguntas"} a Jev, ${found} sobre el umbral`));
 }
 
-export function formatProject(project) {
+export function formatViolationDelta(delta) {
+  if (!delta?.previousAt) return "";
+  const lines = [
+    bold(
+      `  Desde la última corrida (${delta.previousAt.slice(0, 16).replace("T", " ")} UTC): ${delta.previousCount} → ${delta.currentCount} violaciones`,
+    ),
+  ];
+  if (delta.added.length > 0) {
+    lines.push(red(`    nuevas (${delta.added.length}):`));
+    for (const key of delta.added.slice(0, 12)) {
+      const [ruleId, sessionId, tool, argument] = key.split("\t");
+      lines.push(dim(`      sesión ${shortId(sessionId)} · ${tool} ${truncate(argument ?? "", 50)} (${ruleId.slice(0, 8)})`));
+    }
+    if (delta.added.length > 12) lines.push(dim(`      … y ${delta.added.length - 12} más`));
+  }
+  if (delta.resolved.length > 0) {
+    lines.push(green(`    resueltas (${delta.resolved.length})`));
+  }
+  if (delta.added.length === 0 && delta.resolved.length === 0) lines.push(dim("    sin cambios en violaciones verificables"));
+  return lines.join("\n");
+}
+
+export function formatProject(project, { delta = null } = {}) {
   const lines = [];
   const currentVerifiable = project.currentRules.filter((rule) => rule.verifiable).length;
   lines.push(bold(`Proyecto: ${project.projectDir}`));
@@ -143,15 +165,34 @@ export function formatProject(project) {
     `  Instrucciones actuales: ${project.currentRules.length} (verificables ${currentVerifiable}, solo exposición ${project.currentRules.length - currentVerifiable})`,
   );
   printSessions(project, lines);
+  if (delta) {
+    const text = formatViolationDelta(delta);
+    if (text) lines.push(text);
+  }
   printRules(project, lines);
   printCompaction(project, lines);
   printJudge(project, lines);
   return lines.join("\n");
 }
 
-export function formatReport(result, { version, writtenFile }) {
+export function formatSessionsList(project) {
+  const lines = [bold(`Sesiones en ${project.projectDir}`), `  Total: ${project.sessions.length} (${harnessCounts(project.sessions)})`];
+  for (const session of project.sessions) {
+    const date = session.start ? new Date(session.start).toISOString().slice(0, 16).replace("T", " ") : "sin fecha";
+    const vcount = project.rules.reduce((sum, rule) => sum + rule.violations.filter((v) => v.sessionId === session.sessionId).length, 0);
+    const mark = session.status === "analyzed" ? green("analizada") : yellow(`omitida: ${session.reason}`);
+    const viol = vcount > 0 ? red(` · ${vcount} violaciones`) : dim(" · 0 violaciones");
+    lines.push(`  ${shortId(session.sessionId)}  ${session.harness}  ${date} UTC  ${mark}${viol}`);
+  }
+  lines.push("", dim("Corre `fiel analyze` para el desglose por regla."));
+  return lines.join("\n");
+}
+
+export function formatReport(result, { version, writtenFile, deltas = null }) {
   const lines = [bold(`fiel ${version} · cumplimiento de instrucciones (Cursor y Claude Code)`), ""];
-  for (const project of result.projects) lines.push(formatProject(project), "");
+  result.projects.forEach((project, index) => {
+    lines.push(formatProject(project, { delta: deltas?.[index] ?? null }), "");
+  });
   if (result.skippedProjects.length > 0) {
     const total = result.skippedProjects.reduce((sum, item) => sum + item.sessions, 0);
     lines.push(bold(`Proyectos omitidos: ${result.skippedProjects.length} (${sessionsLabel(total)})`));
@@ -180,12 +221,15 @@ export function formatAutomations(store) {
 
 export function formatSuggestions(suggestions) {
   if (suggestions.length === 0) return "Nada que proponer: no hubo violaciones ni instrucciones perdidas al compactar.";
-  const lines = [bold(`Propuestas (${suggestions.length}) · se guardan solo en .fiel/automations.json`), ""];
+  const lines = [bold(`Propuestas (${suggestions.length})`), ""];
   for (const item of suggestions) {
     lines.push(`${item.id}  ${item.kind} @ ${item.trigger}${item.glob ? ` (${item.glob})` : ""}`);
     lines.push(dim(`    ${item.fact}`));
   }
-  lines.push("", "Aplica una con `fiel apply <id>` y deshazla con `fiel undo <id>`. Nunca toca AGENTS.md.");
+  lines.push(
+    "",
+    "Guarda en disco con `fiel suggest --save`, aplica con `fiel apply <id>`, luego `fiel install`. Nunca toca AGENTS.md.",
+  );
   return lines.join("\n");
 }
 

@@ -2,6 +2,7 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, isAbsolute, join, relative } from "node:path";
 import { extractDirectives } from "../analyzers/directives.mjs";
 import { pathMatcher } from "../analyzers/compliance.mjs";
+import { parseHookStdin } from "../security.mjs";
 import { appendLog, ensureFielDir, fielDir, loadAutomations, readJson } from "../store.mjs";
 
 const MAX_FACT_CHARS = 700;
@@ -180,12 +181,7 @@ export function renderHookOutput(harness, event, decision) {
 
 // Fails open: any error yields an empty, valid answer for the harness.
 export function runHook({ harness, event, stdin = "", projectDir, dryRun = false, now = new Date() }) {
-  let input = {};
-  try {
-    input = stdin.trim() ? JSON.parse(stdin) : {};
-  } catch {
-    input = {};
-  }
+  const input = parseHookStdin(stdin);
   try {
     const decision = decideHook({ harness, event, input, projectDir, now });
     if (!dryRun) {

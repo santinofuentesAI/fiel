@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.1 (22 nov 2026)
+
+- Seguridad: tope de stdin en hooks, saneado de `automations.json`, resolución de proyecto multi-root, redacción en `--json` y en evidencia enviada a Jev.
+- `fiel report` muestra delta de violaciones vs la última corrida (`.fiel/last-run.json`).
+- `fiel sessions`, `fiel analyze --fail-on-violations`, `fiel suggest --save` (ya no escribe propuestas por defecto).
+- `fiel doctor` revisa si los hooks están instalados y cierra el loop medir → apply → install.
+
 ## 0.3.0 (22 nov 2026)
 
 - **Claude Code**: lector de `~/.claude/projects/*/*.jsonl` (`tool_use` con `file_path`, `tool_result.is_error`, `compact_boundary` e `isCompactSummary`). `analyze` y `analyze --all` combinan sesiones de Cursor y Claude Code por proyecto.

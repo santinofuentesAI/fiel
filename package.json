@@ -1,6 +1,6 @@
 {
   "name": "fiel",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "CLI que mide si tu agente de Cursor o Claude Code cumplió las reglas de AGENTS.md y CLAUDE.md, y si sobrevivió lo que pediste en el chat a la compactación.",
   "type": "module",
   "bin": {

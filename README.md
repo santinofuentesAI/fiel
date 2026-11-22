@@ -48,7 +48,14 @@ fiel analyze       # el proyecto de la carpeta actual
 
 O sin instalar: `git clone https://github.com/santinofuentesAI/fiel && cd fiel && node bin/fiel.mjs demo`.
 
-Fiel busca las sesiones en `~/.cursor/projects/` y `~/.claude/projects/`. Puedes cambiar esas rutas con `FIEL_CURSOR_PROJECTS` y `FIEL_CLAUDE_PROJECTS`.
+Fiel busca las sesiones en `~/.cursor/projects/` y `~/.claude/projects/`. Variables útiles:
+
+| Variable | Para qué |
+|---|---|
+| `FIEL_CURSOR_PROJECTS` / `FIEL_CLAUDE_PROJECTS` | Dónde están los transcripts |
+| `CURSOR_PROJECT_DIR` / `CLAUDE_PROJECT_DIR` | Los hooks del IDE apuntan el proyecto activo |
+| `FIEL_HOME` | Comp puerta de Jev (`~/.fiel`) |
+| `FIEL_JEV_URL` | URL del juez local (default `http://127.0.0.1:8017/v1/systemone`) |
 
 ## Comandos
 
@@ -65,8 +72,23 @@ Fiel busca las sesiones en `~/.cursor/projects/` y `~/.claude/projects/`. Puedes
 | `fiel uninstall [ruta]` | Quita solo los hooks de Fiel | Esos dos archivos |
 | `fiel jev status` / `fiel jev gate` | Estado del juez local y su compuerta de calidad | `~/.fiel/jev-gate.json` |
 | `fiel analyze --judge jev` | Agrega hallazgos probabilísticos, separados de los determinísticos | Igual que `analyze` |
+| `fiel sessions [ruta]` | Sesiones en disco con fecha y conteo de violaciones | Nada |
 
-Opciones: `--json`, `--no-write`, `--dry-run` (install), `--cursor` / `--claude` (install para un solo harness), `--sessions-from <ruta>` (si moviste el proyecto). Código de salida 0 si corrió, 1 con un mensaje claro si no (ruta inexistente, sin sesiones, sin reglas, opción inválida).
+Opciones: `--json`, `--fail-on-violations` (CI), `--no-write`, `--save` (con `suggest`), `--dry-run` (install), `--cursor` / `--claude` (install para un solo harness), `--sessions-from <ruta>` (si moviste el proyecto). Código de salida 0 si corrió, 1 con un mensaje claro si no (ruta inexistente, sin sesiones, sin reglas, opción inválida); con `--fail-on-violations`, 1 si hay violaciones verificables.
+
+### CI en tu repo
+
+```bash
+fiel analyze --fail-on-violations --no-write
+```
+
+### Seguridad (hooks y `.fiel/`)
+
+- Los comandos de hook van escapados con `JSON.stringify`; no usan shell.
+- Stdin del hook tiene tope de 256 KB; JSON inválido → respuesta vacía (fail-open).
+- Solo se inyectan automatizaciones `applied` saneadas (facts acotados, sin globs absolutos).
+- `--json` redacta patrones comunes de tokens en argumentos de violaciones.
+- `.fiel/.gitignore` ignora `automations.json`, `instructions.json`, `last-run.json`, `log.jsonl` y `chat/` para que no se commiteen medidas ni contexto inyectado.
 
 **Fiel nunca modifica `AGENTS.md`, `CLAUDE.md` ni `.cursor/rules/`.** Su estado vive en `.fiel/`, con un `.gitignore` propio para el log y el estado de chat.
 

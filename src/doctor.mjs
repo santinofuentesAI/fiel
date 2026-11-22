@@ -2,7 +2,9 @@ import { homedir } from "node:os";
 import { defaultCursorRoot, findCursorTranscripts } from "./readers/cursor.mjs";
 import { defaultClaudeRoot, findClaudeTranscripts } from "./readers/claude.mjs";
 import { findRuleFiles, isGitRepo } from "./analyzers/exposure.mjs";
+import { harnessHookStatus } from "./install-status.mjs";
 import { jevHealth, jevUrl, loadGate } from "./judges/jev.mjs";
+import { loadAutomations } from "./store.mjs";
 
 function nodeMajor(version = process.versions.node) {
   return Number(version.split(".")[0]);
@@ -56,6 +58,20 @@ export async function doctor({
       : "sin git: solo se juzgan sesiones posteriores al mtime del archivo de reglas",
   });
 
+  const hooks = harnessHookStatus(cwd);
+  const appliedPins = loadAutomations(cwd).automations.filter((item) => item.status === "applied" && item.kind === "pin").length;
+  const hookDetail = hooks.any
+    ? `Cursor ${hooks.cursor.installed ? hooks.cursor.events.join(", ") : "—"}; Claude ${hooks.claude.installed ? hooks.claude.events.join(", ") : "—"}`
+    : appliedPins > 0
+      ? `${appliedPins} hechos aplicados en .fiel/ pero sin hooks: corre \`fiel install\` para que lleguen al chat`
+      : "sin hooks (después de \`fiel apply\`, corre \`fiel install\`)";
+  checks.push({
+    name: "hooks",
+    required: false,
+    ok: hooks.any || appliedPins === 0,
+    detail: hookDetail,
+  });
+
   const jev = await health();
   const gate = loadGate();
   const passed = gate ? Object.entries(gate.tasks).filter(([, task]) => task.passed).map(([name]) => name) : [];
@@ -86,6 +102,10 @@ export function formatDoctor(report) {
     lines.push(`${check.ok ? "ok" : check.required ? "!!" : ".."}  ${check.name}: ${check.detail}`);
   }
   lines.push("");
+  const hooksCheck = report.checks.find((check) => check.name === "hooks");
   lines.push(report.ok ? "Listo para `fiel analyze`." : "Falta algo marcado con !!. El resto son avisos.");
+  if (hooksCheck && !hooksCheck.ok) {
+    lines.push("Siguiente paso: `fiel install` para cerrar el loop medir → apply → hooks.");
+  }
   return lines.join("\n");
 }

@@ -1,5 +1,6 @@
 import { relative, isAbsolute } from "node:path";
 import { extractDirectives } from "../analyzers/directives.mjs";
+import { redactSecrets } from "../security.mjs";
 import { positiveScore } from "./gate.mjs";
 
 const MAX_ACTIONS = 80;
@@ -9,9 +10,9 @@ function actionLines(session, projectDir) {
     .filter((event) => event.kind === "tool_use" && (event.family === "edit" || event.family === "shell"))
     .slice(-MAX_ACTIONS)
     .map((event) => {
-      if (event.command) return `${event.tool}: ${event.command.slice(0, 160)}`;
+      if (event.command) return redactSecrets(`${event.tool}: ${event.command.slice(0, 160)}`);
       const path = event.path && isAbsolute(event.path) ? relative(projectDir, event.path) : event.path;
-      return `${event.tool}: ${path}`;
+      return redactSecrets(`${event.tool}: ${path}`);
     });
 }
 

@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { applySuggestion, mergeSuggestions, suggestFromAnalysis, undoAutomation } from "../src/suggest.mjs";
+import { applySuggestion, findAutomation, mergeSuggestions, suggestFromAnalysis, undoAutomation } from "../src/suggest.mjs";
 import { projectWithFindings } from "./helpers/findings.mjs";
 
 const now = new Date("2026-11-22T18:00:00Z");
@@ -16,6 +16,18 @@ test("suggest: before_read por forbidden_path y after_compact por la instrucció
   );
   assert.match(suggestions[0].fact, /\[AGENTS\.md:7\]/);
   assert.match(suggestions[1].fact, /scripts\/db-reset\.mjs/);
+});
+
+test("findAutomation no adivina con prefijo ambiguo", () => {
+  const store = {
+    version: 1,
+    automations: [
+      { id: "abc1111111", status: "proposed" },
+      { id: "abc2222222", status: "proposed" },
+    ],
+  };
+  assert.equal(findAutomation(store, "abc"), null);
+  assert.equal(findAutomation(store, "abc1111111")?.id, "abc1111111");
 });
 
 test("apply y undo cambian solo el estado; merge no duplica", () => {
