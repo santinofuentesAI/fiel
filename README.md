@@ -1,17 +1,20 @@
 # Held
 
-> **Tu agente no necesita más contexto. Necesita el correcto, y saber si lo está usando.**
+> **Le escribes reglas a tu agente. Held te dice si las cumplió, con pruebas, y hace que no las olvide.**
 
-Held es una **CLI de desarrollador** que lee las sesiones de **Cursor** y **Claude Code** que ya tienes en disco y responde dos preguntas con evidencia:
+Escribes `AGENTS.md`, `CLAUDE.md` y `.cursor/rules/`. En el chat agregas "no toques `scripts/db-reset.mjs`". Y después no sabes nada: ni si el agente lo cumplió, ni si lo olvidó cuando el contexto se llenó y se compactó. Las herramientas de contexto responden con *más* contexto: más reglas, más memoria, más MCP. Ninguna te dice si el contexto que ya tienes se está usando.
 
-1. **¿El agente cumplió `AGENTS.md`, `CLAUDE.md` y `.cursor/rules/`?** Regla por regla, con la herramienta, la ruta o el comando exacto y el origen `[AGENTS.md:15]`.
-2. **¿Sobrevivió a la compactación lo que le pediste en el chat?** Los archivos de reglas se reenvían en cada turno; lo que escribiste en el chat ("no toques `scripts/db-reset.mjs`") vive solo en el historial, y el resumen de la compactación puede perderlo.
+Held lo mide. Lee las sesiones de Cursor y Claude Code que ya están en tu disco y las audita como la caja negra de un avión:
 
-Después de medir, Held actúa sin tocar tus reglas: propone hechos para reinyectar (`held suggest`), los guarda en `.held/` (`held apply`) e instala hooks de Cursor y Claude Code (`held install`) que conservan tus instrucciones del chat al compactar.
+1. **Juzga cada sesión con las reglas que existían ese día**, no con las de hoy: reconstruye tu `AGENTS.md` por fecha desde git. Si no puede saber qué versión veía el agente, no juzga esa sesión y te dice por qué.
+2. **Encuentra la amnesia de la compactación.** Los archivos de reglas se reenvían en cada turno; lo que dices en el chat no. Cuando el contexto se llena y se resume, Held compara tus instrucciones con el resumen y te dice cuáles se perdieron.
+3. **Cierra el ciclo y lo vuelve a medir.** Convierte cada falla en un hecho que los hooks de Cursor y Claude Code reinyectan en el momento justo (al leer esa ruta, después de compactar). En la siguiente corrida te muestra si la regla dejó de romperse: medir, intervenir, medir otra vez.
 
-Sin API key, sin servidor, sin dependencias (Node 20+). Tus transcripts no salen de tu máquina.
+**Evidencia, no impresiones:** 19 sesiones reales con hoja de verdad revisada a mano, precisión y recall 1,0 en las 28 violaciones. En un proyecto real encontró al agente editando a mano, dos veces, código generado que `AGENTS.md` prohibía tocar. En otro, una instrucción del chat ("ejecuta `npm run agents:sync`") que desapareció del resumen tras 7 compactaciones.
 
-*In English: Held is a zero-dependency Node CLI that measures, per rule, whether your Cursor or Claude Code agent followed AGENTS.md/CLAUDE.md in real sessions, detects chat instructions lost at context compaction, and installs hooks that keep them alive. An optional local judge (Jev) only turns on for tasks where it passed a measured precision gate.*
+Sin API key, sin servidor, sin dependencias (Node 20+). Tus transcripts no salen de tu máquina y Held nunca edita tus reglas: todo vive en `.held/`.
+
+*In English: You write rules for your coding agent and never find out whether it followed them. Held is a zero-dependency CLI that audits the Cursor and Claude Code sessions already on your disk. It judges each session against the rules as they existed that day (rebuilt from git), catches chat instructions lost when the context is compacted, and closes the loop: hooks re-inject what was forgotten, and the next run shows whether the rule stopped breaking. Precision and recall 1.0 on 19 hand-labeled real sessions. An optional local judge (Jev) only turns on for tasks where it passed a measured precision gate.*
 
 ## Pruébalo en 30 segundos
 
