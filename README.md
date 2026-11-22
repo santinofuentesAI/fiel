@@ -1,5 +1,9 @@
 <p align="center">
-  <img src="docs/hero.jpg" alt="Held: caja negra de las sesiones de tu agente de código" width="920">
+  <img src="docs/icon.png" width="72" alt="Held">
+</p>
+
+<p align="center">
+  <img src="docs/hero.png" alt="Held: le escribes reglas a tu agente. Held te dice si las cumplió." width="920">
 </p>
 
 <p align="center">
@@ -9,8 +13,6 @@
   <img src="https://img.shields.io/badge/deps-0-lightgrey" alt="cero dependencias">
   <img src="https://img.shields.io/badge/license-MIT-blue" alt="MIT">
 </p>
-
-<p align="center"><strong>13 → 2 violaciones</strong> · mismo modelo, mismas 5 tareas · <strong>70 tokens</strong> inyectados · precisión y recall 1,0</p>
 
 # Held
 

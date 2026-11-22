@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="640" viewBox="0 0 1280 640" role="img" aria-label="Held: caja negra de las sesiones de tu agente">
+  <defs>
+    <radialGradient id="vignette" cx="50%" cy="45%" r="70%">
+      <stop offset="0%" stop-color="#16140f"/>
+      <stop offset="100%" stop-color="#0b0b0c"/>
+    </radialGradient>
+  </defs>
+  <rect width="1280" height="640" fill="#0b0b0c"/>
+  <rect x="0" y="0" width="1280" height="640" fill="url(#vignette)"/>
+
+  <text x="640" y="86" text-anchor="middle" fill="#8a7a4a" font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif" font-size="13" letter-spacing="6">CLI &#183; CURSOR &#183; CLAUDE CODE</text>
+
+  <text x="640" y="300" text-anchor="middle" fill="#d4b45a" font-family="Georgia, 'Times New Roman', Times, serif" font-size="128" letter-spacing="22">HELD</text>
+  <rect x="490" y="338" width="300" height="1.5" fill="#d4b45a"/>
+  <text x="640" y="390" text-anchor="middle" fill="#e8e2d2" font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif" font-size="22">Le escribes reglas a tu agente. Held te dice si las cumpli&#243;.</text>
+  <text x="640" y="428" text-anchor="middle" fill="#8a7a4a" font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif" font-size="15" letter-spacing="3">FLIGHT RECORDER FOR AI CODING AGENTS</text>
+
+  <g font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif" font-size="14" fill="#cfc6b0" text-anchor="middle">
+    <text x="280" y="560"><tspan fill="#d4b45a" font-size="20" font-weight="700">13 &#8594; 2</tspan><tspan dx="8" fill="#8a7a4a">violaciones, mismo modelo</tspan></text>
+    <text x="640" y="560"><tspan fill="#d4b45a" font-size="20" font-weight="700">1,0</tspan><tspan dx="8" fill="#8a7a4a">precisi&#243;n y recall</tspan></text>
+    <text x="1000" y="560"><tspan fill="#d4b45a" font-size="20" font-weight="700">70</tspan><tspan dx="8" fill="#8a7a4a">tokens inyectados</tspan></text>
+  </g>
+</svg>
