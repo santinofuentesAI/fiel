@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.6.1 (22 nov 2026)
+
+- **Experimento controlado**: mismas 5 tareas y modelo; control del mismo día 13 violaciones (4 de 5 sesiones), con los 3 hechos de Held 2 (1 de 5). Transcripts en `examples/pin-experiment/`, reproducido por `test/experiment.test.mjs`.
+- Pitch del README reescrito: auditoría con las reglas de ese día, amnesia de compactación y ciclo medido.
+
 ## 0.6.0 (22 nov 2026)
 
 Antítesis de todo el funcionamiento y lo que se corrigió:

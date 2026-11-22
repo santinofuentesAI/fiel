@@ -1,11 +1,12 @@
 import { execFileSync } from "node:child_process";
 import { mkdirSync, mkdtempSync, readFileSync, readdirSync, utimesSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { basename, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { encodeProjectKey } from "./readers/projects.mjs";
 
 export const EXAMPLE_DIR = fileURLToPath(new URL("../examples/demo-tienda/", import.meta.url));
+export const EXPERIMENT_DIR = fileURLToPath(new URL("../examples/pin-experiment/", import.meta.url));
 const RULES_DATE = "2026-11-19T12:00:00Z";
 const SESSIONS_MTIME = new Date("2026-11-21T18:00:00Z");
 
@@ -25,13 +26,28 @@ function copySession(source, target, projectDir) {
 
 // Builds a throwaway copy of the trap repo with its rules committed before the
 // sessions, plus Cursor and Claude Code session folders pointing at it.
-export function prepareDemo(base = mkdtempSync(join(tmpdir(), "held-demo-"))) {
+function initRulesRepo(base) {
   const projectDir = join(base, "tienda");
   mkdirSync(projectDir, { recursive: true });
   for (const file of ["AGENTS.md", "package.json"]) writeFileSync(join(projectDir, file), readFileSync(join(EXAMPLE_DIR, file)));
   git(projectDir, ["init", "-q"]);
   git(projectDir, ["add", "-A"]);
   git(projectDir, ["commit", "-q", "-m", "reglas"]);
+  return projectDir;
+}
+
+// One Cursor session from examples/pin-experiment/ against a fresh copy of the
+// trap repo, so each run is judged on its own.
+export function prepareExperimentRun(transcriptFile, base = mkdtempSync(join(tmpdir(), "held-exp-"))) {
+  const projectDir = initRulesRepo(base);
+  const cursorRoot = join(base, "cursor-projects");
+  const session = basename(transcriptFile, ".jsonl");
+  copySession(transcriptFile, join(cursorRoot, encodeProjectKey(projectDir), "agent-transcripts", session, `${session}.jsonl`), projectDir);
+  return { base, projectDir, cursorRoot };
+}
+
+export function prepareDemo(base = mkdtempSync(join(tmpdir(), "held-demo-"))) {
+  const projectDir = initRulesRepo(base);
 
   const cursorRoot = join(base, "cursor-projects");
   const key = encodeProjectKey(projectDir);
