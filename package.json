@@ -1,5 +1,5 @@
 {
-  "name": "held",
+  "name": "held-cli",
   "version": "0.6.1",
   "description": "Audita las sesiones reales de Cursor y Claude Code: si el agente cumplió AGENTS.md/CLAUDE.md (con las reglas de ese día), qué instrucciones del chat perdió al compactar, y si los hooks lo corrigieron.",
   "type": "module",
@@ -11,6 +11,7 @@
     "bin",
     "src",
     "examples",
+    "!examples/pin-experiment",
     "README.md",
     "CHANGELOG.md",
     "LICENSE"
