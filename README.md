@@ -17,7 +17,7 @@ Hoy escribes reglas, pegas recordatorios y no tienes cómo saber si sirvieron. F
 
 Sin API key, sin servidor, sin dependencias. Tus transcripts no salen de la máquina.
 
-Lo que **aún no** hace (y no hay que venderlo como si existiera): sugerir reescrituras, hooks en vivo, ni detectar reglas perdidas al compactar.
+Después de medir, `fiel suggest` propone automatizaciones de contexto (hechos, no órdenes), `fiel apply` las guarda en `.fiel/` y `fiel install` registra hooks de Cursor que las reinyectan. Nunca edita `AGENTS.md`.
 
 ## Qué mide hoy
 
@@ -37,6 +37,12 @@ fiel analyze --all           # todos los proyectos con sesiones de Cursor en dis
 fiel analyze --json          # salida estructurada
 fiel analyze ~/nuevo --sessions-from ~/viejo   # si moviste o renombraste el proyecto
 fiel analyze --no-write      # no escribe .fiel/instructions.json
+fiel report                  # analyze + compactación + automatizaciones aplicadas
+fiel suggest                 # propone fijar o podar contexto (solo .fiel/)
+fiel apply <id>              # aplica una propuesta en .fiel/automations.json
+fiel undo <id>               # deja de inyectar esa automatización
+fiel install                 # hooks de Cursor que inyectan esos hechos
+fiel install --dry-run       # muestra el hooks.json, no escribe
 ```
 
 Código de salida 0 si el análisis corrió, 1 si hubo un error (ruta inexistente, sin sesiones, sin archivos de reglas).
@@ -76,12 +82,13 @@ El resto de instrucciones queda como `exposure_only`: se cuenta su costo en toke
 | Lector de transcripts de Cursor | Funciona. 30 sesiones reales leídas |
 | Exposición por fecha (git y mtime) | Funciona |
 | Extractor con origen `[archivo:línea]` y 5 patrones | Funciona |
-| `fiel analyze` (ruta, `--all`, `--json`) y `fiel doctor` | Funciona. Evaluación medida abajo |
-| Transcripts de subagentes de Cursor | Se leen (antes se omitían) |
-| Reglas perdidas al compactar | Pendiente |
-| `suggest`, hooks para Claude Code y Codex | Pendiente |
+| `fiel analyze` / `fiel report` / `fiel doctor` | Funciona. Evaluación medida abajo |
+| Transcripts de subagentes de Cursor | Se leen |
+| Compactación `compaction/segment_*.md` | Funciona: marca instrucciones que estaban en un segmento y desaparecieron del último |
+| `fiel suggest` / `apply` / `undo` | Funciona. Solo escribe `.fiel/automations.json` |
+| `fiel install` (hooks de Cursor) | Funciona. Inyecta hechos; no deniega herramientas. No pisa `~/.cursor/hooks.json` |
 
-Límites conocidos: Cursor no guarda resultados de herramientas, así que un comando que corrió cuenta aunque haya fallado. Reglas sobre lecturas ("no leas Y", "abre siempre Z") aún no se verifican. Compaction sigue fuera.
+Límites conocidos: Cursor no guarda resultados de herramientas, así que un comando que corrió cuenta aunque haya fallado. Reglas sobre lecturas ("no leas Y", "abre siempre Z") aún no se verifican. No hay lector de Codex ni de Claude Code todavía. Jev no está integrado.
 
 ## Evaluación (5 sesiones reales, 20 nov 2026)
 

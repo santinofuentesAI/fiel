@@ -1,6 +1,6 @@
 {
   "name": "fiel",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "CLI que mide si tu agente de Cursor cumplió las reglas de AGENTS.md y CLAUDE.md en sesiones reales.",
   "type": "module",
   "bin": {

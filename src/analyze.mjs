@@ -6,6 +6,7 @@ import { findRuleFiles, sessionExposure } from "./analyzers/exposure.mjs";
 import { extractInstructions } from "./analyzers/extractor.mjs";
 import { analyzeSessions } from "./analyzers/compliance.mjs";
 import { loadScripts } from "./analyzers/scripts.mjs";
+import { lostAtCompact as findLostAtCompact } from "./analyzers/compaction.mjs";
 
 export class FielError extends Error {}
 
@@ -31,20 +32,37 @@ export function currentInstructions(projectDir, ruleFiles) {
   return ruleFiles.flatMap((file) => extractInstructions(readFileSync(join(projectDir, file), "utf8"), file));
 }
 
+function sessionText(session) {
+  return session.events
+    .map((event) => [event.text, event.path, event.command].filter(Boolean).join("\n"))
+    .join("\n");
+}
+
 export function analyzeProject({ projectDir, sessionRoot = projectDir, transcripts, now = new Date() }) {
   const ruleFiles = findRuleFiles(projectDir);
   const currentRules = currentInstructions(projectDir, ruleFiles);
+  const sessions = loadSessions(transcripts);
   const result = analyzeSessions({
     projectDir,
     sessionRoot,
     ruleFiles,
     currentRules,
-    sessions: loadSessions(transcripts),
+    sessions,
     scripts: loadScripts(projectDir),
     now,
     exposureFor: (date) => sessionExposure(projectDir, ruleFiles, date),
   });
-  return { ...result, currentRules };
+  const lostAtCompact = [];
+  for (const session of sessions) {
+    for (const item of findLostAtCompact({
+      transcriptFile: session.file,
+      transcriptText: sessionText(session),
+      instructions: currentRules,
+    })) {
+      lostAtCompact.push({ ...item, sessionId: session.session });
+    }
+  }
+  return { ...result, currentRules, lostAtCompact };
 }
 
 function isDirectory(path) {

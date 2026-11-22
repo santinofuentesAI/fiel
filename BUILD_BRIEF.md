@@ -281,6 +281,8 @@ Huecos detectados en reglas reales (no son ninguno de los 4 tipos): comando proh
 
 Fixtures: `test/fixtures/demo-tienda/`, `eval-flash-4/`, `eval-rush-2/`, `eval-hit-generated/`, `eval-hit-rm/`. Ronda 4: verdadero positivo de `forbidden_path` (edit a mano de `src/generated/api-client.mjs`) y de `forbidden_command` (`rm -rf` con ruta absoluta; Fiel al inicio no lo veía). `hit-rules` carga `.cursor/rules/*.mdc`. Grok 4.6 medium cumplió lint y test.
 
+22 nov: `fiel suggest` / `apply` / `undo`, detección de instrucciones perdidas en `compaction/segment_*.md`, y `fiel install` (hooks de Cursor que inyectan hechos de `.fiel/`, sin deny). Claude Code / Codex / Jev siguen fuera.
+
 ## 12. Referencias
 - Hackathon: https://www.trydojo.io/hackathons/dojo-ai-hack
 - Hooks de Claude Code: https://code.claude.com/docs/en/hooks
