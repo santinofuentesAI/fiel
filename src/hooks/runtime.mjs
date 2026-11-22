@@ -38,7 +38,7 @@ function saveChat(projectDir, conversation, chat) {
 export function rememberDirectives(chat, prompt, now = new Date()) {
   for (const directive of extractDirectives(prompt ?? "")) {
     if (!chat.directives.some((item) => item.text === directive.text)) {
-      chat.directives.push({ text: directive.text, at: now.toISOString() });
+      chat.directives.push({ text: directive.text, anchors: directive.anchors, at: now.toISOString() });
     }
   }
   chat.directives = chat.directives.slice(-MAX_DIRECTIVES);
@@ -94,11 +94,12 @@ export function formatDirectives(directives) {
 
 function compactInstructions(directives) {
   if (directives.length === 0) return "";
-  return capped(
-    "Keep these instructions the user wrote in this chat verbatim in the summary:",
-    directives.map((item) => `«${item.text}»`),
-    MAX_DIRECTIVE_CHARS,
-  );
+  const lines = directives.map((item) => `«${item.text}»`);
+  const anchors = [...new Set(directives.flatMap((item) => item.anchors ?? []).filter(Boolean))];
+  if (anchors.length > 0) {
+    lines.push(`Include these exact tokens in the summary: ${anchors.map((anchor) => `\`${anchor}\``).join(", ")}`);
+  }
+  return capped("Keep these instructions the user wrote in this chat verbatim in the summary:", lines, MAX_DIRECTIVE_CHARS);
 }
 
 export function decideHook({ harness, event, input, projectDir, now = new Date() }) {

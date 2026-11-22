@@ -112,10 +112,15 @@ function printCompaction(project, lines) {
     `  Compactación: ${sessionsLabel(compaction.sessions)} con ${compaction.compactions} ${compaction.compactions === 1 ? "compactación" : "compactaciones"}. Instrucciones que diste en el chat:`,
   );
   lines.push(
-    `    ${compaction.lost.length > 0 ? yellow(`perdidas ${compaction.lost.length}`) : green("perdidas 0")}, conservadas ${compaction.kept}, sin ancla ${compaction.unanchored.length} (solo las juzga Jev)`,
+    `    ${compaction.lost.length > 0 ? yellow(`perdidas ${compaction.lost.length}`) : green("perdidas 0")}, conservadas ${compaction.kept}, sin ancla ${compaction.unanchored.length} (pins opcionales vía suggest/onboard)`,
   );
   for (const item of compaction.lost) {
     lines.push(dim(`    sesión ${shortId(item.sessionId)} ${item.harness} · «${truncate(item.text, 90)}»`));
+  }
+  if (compaction.lost.length > 0) {
+    lines.push(
+      dim("    → Corre `held onboard` o `held suggest --save` + `held apply <id>` + `held install` para reinyectar tras compactar."),
+    );
   }
 }
 
@@ -156,6 +161,36 @@ export function formatViolationDelta(delta) {
   return lines.join("\n");
 }
 
+export function formatCompactionDelta(compaction) {
+  if (!compaction?.previousAt) return "";
+  const lines = [
+    bold(
+      `  Memoria del chat (compactación): ${compaction.previousLost} → ${compaction.currentLost} instrucciones perdidas en resumen`,
+    ),
+  ];
+  if (compaction.added.length > 0) lines.push(yellow(`    nuevas pérdidas medidas (${compaction.added.length})`));
+  if (compaction.resolved.length > 0) lines.push(green(`    ya no perdidas (${compaction.resolved.length})`));
+  if (compaction.added.length === 0 && compaction.resolved.length === 0 && compaction.previousLost === compaction.currentLost) {
+    lines.push(dim("    sin cambio en conteo de pérdidas"));
+  }
+  if (compaction.currentLost > 0) lines.push(dim("    → `held onboard` aplica pins y hooks para reinyectar tras la próxima compactación."));
+  return lines.join("\n");
+}
+
+function violationCount(project) {
+  return project.rules.reduce((sum, rule) => sum + rule.violations.length, 0);
+}
+
+export function formatActionSummary(project) {
+  const violations = violationCount(project);
+  const lost = project.compaction?.lost?.length ?? 0;
+  const parts = [];
+  if (lost > 0) parts.push(bold("`held onboard`") + " para memoria del chat");
+  if (violations > 0) parts.push(bold("`held suggest --save`") + " + apply para reglas");
+  if (parts.length === 0) return "";
+  return yellow(`  Acción recomendada: ${parts.join("; ")}.`);
+}
+
 export function formatProject(project, { delta = null } = {}) {
   const lines = [];
   const currentVerifiable = project.currentRules.filter((rule) => rule.verifiable).length;
@@ -165,9 +200,13 @@ export function formatProject(project, { delta = null } = {}) {
     `  Instrucciones actuales: ${project.currentRules.length} (verificables ${currentVerifiable}, solo exposición ${project.currentRules.length - currentVerifiable})`,
   );
   printSessions(project, lines);
+  const action = formatActionSummary(project);
+  if (action) lines.push(action);
   if (delta) {
     const text = formatViolationDelta(delta);
     if (text) lines.push(text);
+    const compact = formatCompactionDelta(delta.compaction);
+    if (compact) lines.push(compact);
   }
   printRules(project, lines);
   printCompaction(project, lines);

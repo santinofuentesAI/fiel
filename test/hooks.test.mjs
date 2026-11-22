@@ -39,10 +39,12 @@ test("Claude Code: guarda lo pedido en el chat, lo pide al resumen y lo reinyect
   run(dir, "claude", "UserPromptSubmit", { ...base, prompt: PROMPT });
   const chat = JSON.parse(readFileSync(join(dir, ".held", "chat", "conv-1.json"), "utf8"));
   assert.deepEqual(chat.directives.map((item) => item.text), ["Ojo: no toques `scripts/db-reset.mjs`."]);
+  assert.deepEqual(chat.directives[0].anchors, ["scripts/db-reset.mjs"]);
 
   const preCompact = run(dir, "claude", "PreCompact", { ...base, trigger: "auto" });
   assert.match(preCompact, /^Keep these instructions the user wrote in this chat verbatim/);
   assert.match(preCompact, /scripts\/db-reset\.mjs/);
+  assert.match(preCompact, /Include these exact tokens/);
 
   assert.doesNotMatch(run(dir, "claude", "SessionStart", { ...base, source: "startup" }), /antes de compactar/);
   const compact = JSON.parse(run(dir, "claude", "SessionStart", { ...base, source: "compact" }));

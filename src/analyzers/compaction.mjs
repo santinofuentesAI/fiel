@@ -30,6 +30,23 @@ function normalize(text) {
   return text.toLowerCase().replace(/\s+/g, " ");
 }
 
+/** Whether an anchor from the user message still appears in the compaction summary. */
+export function anchorInSummary(anchor, summary) {
+  const summaryNorm = normalize(summary);
+  const raw = anchor.toLowerCase().trim();
+  if (raw.length < 3) return false;
+  if (summaryNorm.includes(raw)) return true;
+  if (raw.includes(" ") && summaryNorm.includes(raw)) return true;
+  const base = raw.split(/[/\\]/).pop();
+  if (base && base.length >= 6 && summaryNorm.includes(base)) return true;
+  return false;
+}
+
+export function directiveKeptInSummary(directive, summary) {
+  if (directive.anchors.length === 0) return false;
+  return directive.anchors.some((anchor) => anchorInSummary(anchor, summary));
+}
+
 // Returns the summary the agent kept after the last compaction and the user
 // messages that were compacted away, or null when the session never compacted.
 export function compactionView(session) {
@@ -59,7 +76,6 @@ export function compactionView(session) {
 export function chatDirectivesAtCompact(session) {
   const view = compactionView(session);
   if (!view) return null;
-  const summary = normalize(view.summary);
   const lost = [];
   const kept = [];
   const unanchored = [];
@@ -78,7 +94,7 @@ export function chatDirectivesAtCompact(session) {
         at: event.timestamp ?? null,
       };
       if (directive.anchors.length === 0) unanchored.push(item);
-      else if (directive.anchors.some((anchor) => summary.includes(anchor))) kept.push(item);
+      else if (directiveKeptInSummary(directive, view.summary)) kept.push(item);
       else lost.push(item);
     }
   }

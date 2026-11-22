@@ -7,6 +7,7 @@ const BOOLEAN_FLAGS = {
   "--save": ["save", true],
   "--dry-run": ["dryRun", true],
   "--fail-on-violations": ["failOnViolations", true],
+  "--fail-on-compaction-lost": ["failOnCompactionLost", true],
   "--cursor": ["cursor", true],
   "--claude": ["claude", true],
   "-h": ["help", true],
@@ -30,6 +31,7 @@ export const POSITIONALS = {
   jev: ["action"],
   demo: [],
   doctor: [],
+  onboard: ["path"],
 };
 
 export function parseArgs(argv) {
@@ -47,6 +49,7 @@ export function parseArgs(argv) {
     judge: null,
     save: false,
     failOnViolations: false,
+    failOnCompactionLost: false,
   };
   const rest = [];
   for (let i = 0; i < argv.length; i += 1) {

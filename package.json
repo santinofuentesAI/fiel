@@ -1,6 +1,6 @@
 {
   "name": "held",
-  "version": "0.4.0",
+  "version": "0.4.2",
   "description": "CLI Held: mide si tu agente cumplió AGENTS.md/CLAUDE.md en sesiones reales y si lo del chat sobrevivió a la compactación.",
   "type": "module",
   "bin": {

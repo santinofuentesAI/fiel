@@ -5,6 +5,7 @@ import { findRuleFiles, isGitRepo } from "./analyzers/exposure.mjs";
 import { harnessHookStatus } from "./install-status.mjs";
 import { jevHealth, jevUrl, loadGate } from "./judges/jev.mjs";
 import { loadAutomations } from "./store.mjs";
+import { dim } from "./cli/format.mjs";
 
 function nodeMajor(version = process.versions.node) {
   return Number(version.split(".")[0]);
@@ -103,9 +104,11 @@ export function formatDoctor(report) {
   }
   lines.push("");
   const hooksCheck = report.checks.find((check) => check.name === "hooks");
-  lines.push(report.ok ? "Listo para `held analyze`." : "Falta algo marcado con !!. El resto son avisos.");
+  lines.push(report.ok ? "Listo para `held analyze`, `held report` o `held onboard`." : "Falta algo marcado con !!. El resto son avisos.");
   if (hooksCheck && !hooksCheck.ok) {
-    lines.push("Siguiente paso: `held install` para cerrar el loop medir → apply → hooks.");
+    lines.push("Siguiente paso: `held onboard` (mide + pins + hooks) o `held install` si ya aplicaste pins.");
+  } else if (report.ok) {
+    lines.push(dim("Tras sesiones largas o compactación: `held report` y, si hay pérdidas, `held onboard`."));
   }
   return lines.join("\n");
 }

@@ -94,6 +94,21 @@ export function suggestFromAnalysis(project, { now = new Date() } = {}) {
       seen.add(item.id);
     }
   }
+  for (const item of project.compaction?.unanchored ?? []) {
+    const source = { id: `compact-unanchored-${item.id}`, sourceFile: `chat:${item.harness}`, lineNumber: item.sessionId.slice(0, 8) };
+    const pin = suggestionRecord(source, {
+      kind: "pin",
+      trigger: "after_compact",
+      glob: null,
+      fact: `Instrucción del chat sin ancla verificable (Held no pudo medir si el resumen la conservó): «${item.text.slice(0, 160)}».`,
+      evidence: [{ sessionId: item.sessionId, tool: "compaction", argument: "(sin ancla)" }],
+      now,
+    });
+    if (!seen.has(pin.id)) {
+      suggestions.push(pin);
+      seen.add(pin.id);
+    }
+  }
   return suggestions;
 }
 

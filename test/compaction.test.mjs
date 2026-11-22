@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { chatDirectivesAtCompact } from "../src/analyzers/compaction.mjs";
+import { anchorInSummary, chatDirectivesAtCompact } from "../src/analyzers/compaction.mjs";
 import { anchorsOf, extractDirectives } from "../src/analyzers/directives.mjs";
 
 const user = (index, text) => ({ index, kind: "user_text", text, timestamp: null });
@@ -62,6 +62,26 @@ test("Cursor: usa el resumen del último segment_*.md y solo los mensajes compac
   const result = chatDirectivesAtCompact(session);
   assert.equal(result.compactions, 2);
   assert.deepEqual(result.lost.map((item) => item.text), [early]);
+});
+
+test("ancla por basename en resumen cuenta como conservada", () => {
+  const session = {
+    session: "s2",
+    harness: "claude",
+    events: [
+      user(0, "Ojo: no toques `scripts/db-reset.mjs`."),
+      { index: 3, kind: "compact_summary", text: "Summary: do not edit db-reset.mjs under scripts." },
+    ],
+  };
+  const result = chatDirectivesAtCompact(session);
+  assert.equal(result.lost.length, 0);
+  assert.equal(result.kept.length, 1);
+});
+
+test("anchorInSummary acepta ruta completa o solo archivo", () => {
+  assert.ok(anchorInSummary("scripts/db-reset.mjs", "User asked not to touch db-reset.mjs"));
+  assert.ok(anchorInSummary("npm run check", "Run npm run check before merge"));
+  assert.equal(anchorInSummary("src/foo", "bar"), false);
 });
 
 test("sin compactación devuelve null", () => {

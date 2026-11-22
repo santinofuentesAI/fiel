@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { diffViolations, loadLastRun, saveLastRun } from "../src/history.mjs";
+import { diffCompaction, diffRun, diffViolations, loadLastRun, saveLastRun } from "../src/history.mjs";
 
 const project = {
   rules: [
@@ -23,4 +23,20 @@ test("saveLastRun y diffViolations marcan violaciones nuevas y resueltas", () =>
   saveLastRun(dir, project);
   const delta2 = diffViolations({ rules: [{ id: "rule-a", violations: [] }] }, loadLastRun(dir));
   assert.equal(delta2.resolved.length, 1);
+});
+
+test("diffCompaction compara ids de instrucciones perdidas entre corridas", () => {
+  const dir = mkdtempSync(join(tmpdir(), "held-compact-diff-"));
+  saveLastRun(dir, {
+    rules: [],
+    compaction: { lost: [{ id: "a" }] },
+  });
+  const previous = loadLastRun(dir);
+  const project = { rules: [], compaction: { lost: [{ id: "a" }, { id: "b" }] } };
+  const compaction = diffCompaction(project, previous);
+  assert.equal(compaction.currentLost, 2);
+  assert.deepEqual(compaction.added, ["b"]);
+  const run = diffRun(project, previous);
+  assert.ok(run.compaction);
+  assert.equal(run.added.length, 0);
 });

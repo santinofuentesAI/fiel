@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.4.2 (22 nov 2026)
+
+- `held report`: delta de memoria del chat (pérdidas en compactación) junto al delta de violaciones.
+- Línea **Acción recomendada** en el reporte (`onboard` / `suggest`).
+- `--fail-on-compaction-lost` para CI cuando importa conservar instrucciones del chat.
+- Doctor apunta a `held onboard` como siguiente paso.
+
+## 0.4.1 (22 nov 2026)
+
+- `held onboard`: analyze → suggest → aplica pins → `install` en un paso (memoria del chat tras compactar).
+- Compactación: anclas por basename en el resumen; PreCompact pide tokens exactos; pins para instrucciones sin ancla.
+- `last-run.json` v2 guarda conteo de instrucciones perdidas/conservadas en compactación.
+- Más pruebas e2e (onboard, delta report).
+
 ## 0.4.0 (22 nov 2026)
 
 - **Rebrand a Held** (`held` CLI, estado en `.held/`). El binario `fiel` sigue como alias con aviso de deprecación; los hooks usan `held.mjs`. Variables `HELD_*` con fallback `FIEL_*`; lectura de `.fiel/` legado si no existe `.held/`.

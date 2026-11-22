@@ -68,6 +68,7 @@ Held busca las sesiones en `~/.cursor/projects/` y `~/.claude/projects/`. Variab
 | `held analyze [ruta]` | Cumplimiento por regla y compactación, con evidencia | `.held/instructions.json` (desactívalo con `--no-write`) |
 | `held analyze --all` | Todos los proyectos con sesiones en disco | Igual |
 | `held report [ruta]` | `analyze` + automatizaciones aplicadas | Igual |
+| `held onboard [ruta]` | **Un paso:** `analyze` + pins aplicados + `install` (ataque directo a pérdidas de memoria del chat) | `.held/*` y hooks |
 | `held suggest [ruta]` | Propone hechos para reinyectar a partir de lo medido | `.held/automations.json` |
 | `held apply <id>` / `held undo <id>` | Aplica o deshace una propuesta | `.held/automations.json` |
 | `held install [ruta]` | Hooks de Cursor (`.cursor/hooks.json`) y Claude Code (`.claude/settings.json`) | Esos dos archivos, sin borrar tus hooks |
@@ -76,13 +77,15 @@ Held busca las sesiones en `~/.cursor/projects/` y `~/.claude/projects/`. Variab
 | `held analyze --judge jev` | Agrega hallazgos probabilísticos, separados de los determinísticos | Igual que `analyze` |
 | `held sessions [ruta]` | Sesiones en disco con fecha y conteo de violaciones | Nada |
 
-Opciones: `--json`, `--fail-on-violations` (CI), `--no-write`, `--save` (con `suggest`), `--dry-run` (install), `--cursor` / `--claude` (install para un solo harness), `--sessions-from <ruta>` (si moviste el proyecto). Código de salida 0 si corrió, 1 con un mensaje claro si no (ruta inexistente, sin sesiones, sin reglas, opción inválida); con `--fail-on-violations`, 1 si hay violaciones verificables.
+Opciones: `--json`, `--fail-on-violations` / `--fail-on-compaction-lost` (CI), `--no-write`, `--save` (con `suggest`), `--dry-run` (install/onboard), `--cursor` / `--claude` (install para un solo harness), `--sessions-from <ruta>` (si moviste el proyecto). Código de salida 0 si corrió, 1 con un mensaje claro si no (ruta inexistente, sin sesiones, sin reglas, opción inválida); con las banderas `--fail-on-*`, 1 si hay hallazgos.
 
 ### CI en tu repo
 
 ```bash
-held analyze --fail-on-violations --no-write
+held report --fail-on-violations --fail-on-compaction-lost --no-write
 ```
+
+`report` compara con `.held/last-run.json` (violaciones + pérdidas en compactación). La primera corrida con `--write` crea la baseline.
 
 ### Seguridad (hooks y `.held/`)
 
@@ -133,7 +136,9 @@ Held extrae de tus mensajes las frases con forma de instrucción ("nunca…", "n
 - **Claude Code:** `compact_boundary` y la línea `isCompactSummary` del JSONL;
 - **Cursor:** `compaction/segment_NNN.md`, sección *Summary (curated by compaction step)*.
 
-Si la instrucción tiene un ancla concreta (una ruta, un comando entre backticks, un flag) y ninguna aparece en el resumen, cuenta como **perdida**. Las instrucciones sin ancla no se juzgan con patrones; esas le tocan a Jev.
+Si la instrucción tiene un ancla concreta (una ruta, un comando entre backticks, un flag) y ninguna aparece en el resumen —incluido el **nombre de archivo** cuando el resumen solo menciona `db-reset.mjs`— cuenta como **perdida**. Las instrucciones sin ancla no se miden como perdidas/conservadas con patrones; Held puede proponer un pin `after_compact` igual para que los hooks las reinyecten. **PreCompact** pide explícitamente conservar esos tokens en el resumen; tras compactar, los hooks vuelven a meter hechos + lo que guardaste en `.held/chat/`.
+
+Cuando el contexto se llena y el IDE compacta, corre **`held onboard`** en el repo (o `held report` en CI): mide, aplica pins y deja los hooks listos para la próxima sesión.
 
 ### 4. Hooks: hechos, no órdenes
 

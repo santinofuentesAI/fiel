@@ -9,6 +9,7 @@ import {
   hookCommand,
   installCommand,
   jevCommand,
+  onboardCommand,
   sessionsCommand,
   suggestCommand,
   undoCommand,
@@ -29,6 +30,7 @@ Medir:
   held sessions [ruta]           Lista sesiones en disco con harness, fecha y violaciones
 
 Actuar (solo escribe en .held/):
+  held onboard [ruta]            analyze + suggest + aplica pins + install hooks (memoria del chat tras compactar)
   held suggest [ruta]            Propone hechos para reinyectar (usa --save para escribir en disco)
   held apply <id> [ruta]         Aplica una propuesta
   held undo <id> [ruta]          La deshace
@@ -44,6 +46,7 @@ Juez opcional (Jev, modelo local en CPU):
 Opciones:
   --json                         Salida estructurada
   --fail-on-violations           sale con código 1 si hay violaciones (útil en CI)
+  --fail-on-compaction-lost        sale con código 1 si hay instrucciones del chat perdidas en resumen
   --no-write                     No escribe nada en .held/
   --save                         suggest: guarda propuestas en .held/automations.json
   --dry-run                      install/uninstall: muestra el JSON sin escribir
@@ -65,6 +68,7 @@ const COMMANDS = {
   jev: jevCommand,
   doctor: doctorCommand,
   demo: demoCommand,
+  onboard: onboardCommand,
   sessions: sessionsCommand,
 };
 

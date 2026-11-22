@@ -5,6 +5,7 @@ import { DEFINITIONS } from "../analyzers/compliance.mjs";
 import { writeInstructions } from "../analyzers/extractor.mjs";
 import { doctor, formatDoctor } from "../doctor.mjs";
 import { prepareDemo } from "../demo.mjs";
+import { runOnboard } from "../onboard.mjs";
 import { runHook } from "../hooks/runtime.mjs";
 import { HARNESSES, installHooks, uninstallHooks } from "../install.mjs";
 import { runGate } from "../judges/gate.mjs";
@@ -12,9 +13,21 @@ import { askJev, gateFile, jevHealth, jevUrl, loadGate, saveGate } from "../judg
 import { judgeProject } from "../judges/judge.mjs";
 import { loadAutomations, saveAutomations } from "../store.mjs";
 import { applySuggestion, findAutomation, mergeSuggestions, suggestFromAnalysis, undoAutomation } from "../suggest.mjs";
-import { diffViolations, loadLastRun, saveLastRun } from "../history.mjs";
+import { diffRun, loadLastRun, saveLastRun } from "../history.mjs";
 import { parseHookStdin, redactSecrets, resolveHookProjectDir } from "../security.mjs";
-import { bold, dim, formatAutomations, formatGate, formatReport, formatSessionsList, formatSuggestions, green } from "./format.mjs";
+import {
+  bold,
+  dim,
+  formatAutomations,
+  formatGate,
+  formatReport,
+  formatSessionsList,
+  formatSuggestions,
+  green,
+  shortId,
+  truncate,
+  yellow,
+} from "./format.mjs";
 
 const out = (text) => console.log(text);
 const json = (value) => console.log(JSON.stringify(value, null, 2));
@@ -89,9 +102,7 @@ export async function analyzeCommand(options, { version }) {
   const previous = singleProject && options.write ? loadLastRun(projectDir) : null;
   const { result, writtenFile } = await analyze(options);
   const deltas =
-    singleProject && options.command === "report"
-      ? [diffViolations(result.projects[0], previous)]
-      : null;
+    singleProject && options.command === "report" ? [diffRun(result.projects[0], previous)] : null;
   if (singleProject && options.write && result.projects[0]) saveLastRun(projectDir, result.projects[0]);
   const automations = options.command === "report" && singleProject ? loadAutomations(result.projects[0].projectDir) : null;
   const extra = { ...(automations ? { automations: automations.automations } : {}), ...(deltas ? { delta: deltas[0] } : {}) };
@@ -101,6 +112,10 @@ export async function analyzeCommand(options, { version }) {
   if (options.failOnViolations) {
     const violations = result.projects.reduce((sum, project) => sum + violationCount(project), 0);
     if (violations > 0) process.exitCode = 1;
+  }
+  if (options.failOnCompactionLost) {
+    const lost = result.projects.reduce((sum, project) => sum + (project.compaction?.lost?.length ?? 0), 0);
+    if (lost > 0) process.exitCode = 1;
   }
 }
 
@@ -149,7 +164,7 @@ export async function undoCommand(options) {
   out(`Deshecha ${undone.id}. Los hooks ya no la inyectan.`);
 }
 
-function selectedHarnesses(options) {
+export function selectedHarnesses(options) {
   const picked = HARNESSES.filter((harness) => options[harness]);
   return picked.length > 0 ? picked : HARNESSES;
 }
@@ -217,6 +232,48 @@ export async function doctorCommand(options) {
   if (!report.ok) process.exitCode = 1;
 }
 
+export async function onboardCommand(options, { version }) {
+  const path = resolve(options.path ?? process.cwd());
+  const result = runOnboard(path, {
+    write: options.write && !options.dryRun,
+    dryRun: options.dryRun,
+    install: !options.dryRun,
+    harnesses: selectedHarnesses(options),
+    sessionsFrom: options.sessionsFrom,
+  });
+  if (options.json) {
+    return json({
+      version,
+      projectDir: path,
+      dryRun: options.dryRun,
+      writtenFile: result.writtenFile,
+      violations: result.violations,
+      compaction: result.compaction,
+      applied: result.applied.map((item) => ({ id: item.id, trigger: item.trigger, kind: item.kind })),
+      hooks: result.hookResults.map((item) => ({ harness: item.harness, file: item.file })),
+    });
+  }
+  const lost = result.compaction?.lost?.length ?? 0;
+  out(bold(`held onboard · ${path}`));
+  if (options.dryRun) out(dim("(dry-run: no escribe .held/ ni instala hooks)"));
+  out(`Violaciones de reglas: ${result.violations}`);
+  out(
+    `Compactación (memoria del chat): ${lost > 0 ? yellow(`${lost} instrucciones perdidas en resumen`) : green("ninguna perdida medible")}`,
+  );
+  out(`Pins aplicados: ${result.applied.filter((item) => item.kind === "pin").length}`);
+  if (!options.dryRun && result.hookResults.length > 0) {
+    out(green("Hooks instalados en Cursor y Claude Code."));
+    out(dim("PreCompact pedirá conservar tokens exactos; tras compactar, SessionStart/postToolUse reinyecta hechos + tus instrucciones."));
+  }
+  if (lost > 0) {
+    for (const item of result.compaction.lost.slice(0, 5)) {
+      out(dim(`  · ${shortId(item.sessionId)} «${truncate(item.text, 72)}»`));
+    }
+  }
+  out("");
+  out(`Siguiente: ${bold("held report")} en CI o antes de abrir el IDE para ver delta.`);
+}
+
 const DEMO_PROMPT =
   "Agregá un descuento del 10% en `src/discounts.mjs`. Ojo: no toques `scripts/db-reset.mjs` y al final corré `npm run check`.";
 
@@ -250,5 +307,5 @@ export async function demoCommand(options, { version }) {
   out(bold("2) Lo que el hook reinyecta después de compactar (SessionStart, source=compact):"));
   out(dim(JSON.parse(afterCompact || "{}").hookSpecificOutput?.additionalContext ?? "(nada)"));
   out("");
-  out(`Pruébalo en tu proyecto: ${bold("held analyze")}, ${bold("held suggest")}, ${bold("held apply <id>")}, ${bold("held install")}.`);
+  out(`Pruébalo en tu proyecto: ${bold("held onboard")} (todo en uno) o ${bold("held analyze")} → suggest → apply → install.`);
 }
