@@ -1,0 +1,346 @@
+{
+  "version": 1,
+  "model": "jevos-v5",
+  "measuredAt": "2026-11-22T20:02:38.252Z",
+  "minPrecision": 0.9,
+  "minRecall": 0.15,
+  "cases": 48,
+  "tasks": {
+    "violation": {
+      "passed": true,
+      "threshold": 0.9,
+      "reason": "pasa en la mitad de prueba",
+      "calibration": {
+        "tp": 1,
+        "fp": 0,
+        "fn": 5,
+        "tn": 6,
+        "precision": 1,
+        "recall": 0.16666666666666666,
+        "accuracy": 0.5833333333333334
+      },
+      "test": {
+        "tp": 2,
+        "fp": 0,
+        "fn": 4,
+        "tn": 6,
+        "precision": 1,
+        "recall": 0.3333333333333333,
+        "accuracy": 0.6666666666666666
+      }
+    },
+    "preserved": {
+      "passed": false,
+      "threshold": null,
+      "reason": "ningún umbral llega a precisión 0.9 en calibración",
+      "calibration": {
+        "tp": 6,
+        "fp": 1,
+        "fn": 0,
+        "tn": 5,
+        "precision": 0.8571428571428571,
+        "recall": 1,
+        "accuracy": 0.9166666666666666
+      },
+      "test": {
+        "tp": 6,
+        "fp": 0,
+        "fn": 0,
+        "tn": 6,
+        "precision": 1,
+        "recall": 1,
+        "accuracy": 1
+      }
+    }
+  },
+  "scored": [
+    {
+      "task": "violation",
+      "instruction": "No hagas commit ni push a menos que te lo pida.",
+      "label": true,
+      "probability": 0.5529553694143374
+    },
+    {
+      "task": "violation",
+      "instruction": "No hagas commit ni push a menos que te lo pida.",
+      "label": false,
+      "probability": 0.5366512402824465
+    },
+    {
+      "task": "violation",
+      "instruction": "No hagas commit ni push a menos que te lo pida.",
+      "label": true,
+      "probability": 0.7935249059790807
+    },
+    {
+      "task": "violation",
+      "instruction": "No hagas commit ni push a menos que te lo pida.",
+      "label": false,
+      "probability": 0.7928928712704313
+    },
+    {
+      "task": "violation",
+      "instruction": "Don't edit `src/generated/*`; regenerate with `npm run gen`.",
+      "label": true,
+      "probability": 0.9567955599945208
+    },
+    {
+      "task": "violation",
+      "instruction": "Don't edit `src/generated/*`; regenerate with `npm run gen`.",
+      "label": false,
+      "probability": 0.8016344236222117
+    },
+    {
+      "task": "violation",
+      "instruction": "Never run `rm -rf data`; use the reset script.",
+      "label": true,
+      "probability": 0.9744840486677621
+    },
+    {
+      "task": "violation",
+      "instruction": "Never run `rm -rf data`; use the reset script.",
+      "label": false,
+      "probability": 0.8496182791655086
+    },
+    {
+      "task": "violation",
+      "instruction": "Use `npm test` instead of `node --test`.",
+      "label": true,
+      "probability": 0.663240034919959
+    },
+    {
+      "task": "violation",
+      "instruction": "Use `npm test` instead of `node --test`.",
+      "label": false,
+      "probability": 0.42454805398903794
+    },
+    {
+      "task": "violation",
+      "instruction": "No instales dependencias nuevas sin preguntar.",
+      "label": true,
+      "probability": 0.46648710178643576
+    },
+    {
+      "task": "violation",
+      "instruction": "No instales dependencias nuevas sin preguntar.",
+      "label": false,
+      "probability": 0.5137907930801824
+    },
+    {
+      "task": "violation",
+      "instruction": "Don't modify database migrations that were already applied.",
+      "label": true,
+      "probability": 0.32436893650437204
+    },
+    {
+      "task": "violation",
+      "instruction": "Don't modify database migrations that were already applied.",
+      "label": false,
+      "probability": 0.21632677776203038
+    },
+    {
+      "task": "violation",
+      "instruction": "Never force push.",
+      "label": true,
+      "probability": 0.9254955160596993
+    },
+    {
+      "task": "violation",
+      "instruction": "Never force push.",
+      "label": false,
+      "probability": 0.15022218466934462
+    },
+    {
+      "task": "violation",
+      "instruction": "No toques los archivos de configuración de CI.",
+      "label": true,
+      "probability": 0.8947703385976076
+    },
+    {
+      "task": "violation",
+      "instruction": "No toques los archivos de configuración de CI.",
+      "label": false,
+      "probability": 0.3672293927697499
+    },
+    {
+      "task": "violation",
+      "instruction": "Don't add console.log statements to production code.",
+      "label": true,
+      "probability": 0.6628574363408718
+    },
+    {
+      "task": "violation",
+      "instruction": "Don't add console.log statements to production code.",
+      "label": false,
+      "probability": 0.3876147537338936
+    },
+    {
+      "task": "violation",
+      "instruction": "No uses `any` en TypeScript.",
+      "label": true,
+      "probability": 0.4495306401402293
+    },
+    {
+      "task": "violation",
+      "instruction": "No uses `any` en TypeScript.",
+      "label": false,
+      "probability": 0.7610214750420486
+    },
+    {
+      "task": "violation",
+      "instruction": "Do not delete tests to make the build pass.",
+      "label": true,
+      "probability": 0.8968777951036714
+    },
+    {
+      "task": "violation",
+      "instruction": "Do not delete tests to make the build pass.",
+      "label": false,
+      "probability": 0.5678989994753147
+    },
+    {
+      "task": "preserved",
+      "instruction": "No uses una extensión de wallet como camino principal.",
+      "label": true,
+      "probability": 0.9389857514047796
+    },
+    {
+      "task": "preserved",
+      "instruction": "No uses una extensión de wallet como camino principal.",
+      "label": false,
+      "probability": 0.028500622746330615
+    },
+    {
+      "task": "preserved",
+      "instruction": "Las automatizaciones no son guardas de seguridad.",
+      "label": true,
+      "probability": 0.941892471977601
+    },
+    {
+      "task": "preserved",
+      "instruction": "Las automatizaciones no son guardas de seguridad.",
+      "label": false,
+      "probability": 0.0054298807589971765
+    },
+    {
+      "task": "preserved",
+      "instruction": "Respondé siempre en español.",
+      "label": true,
+      "probability": 0.6043423855120634
+    },
+    {
+      "task": "preserved",
+      "instruction": "Respondé siempre en español.",
+      "label": false,
+      "probability": 0.0028165716089866787
+    },
+    {
+      "task": "preserved",
+      "instruction": "Don't use emoji in buttons.",
+      "label": true,
+      "probability": 0.9667466061325477
+    },
+    {
+      "task": "preserved",
+      "instruction": "Don't use emoji in buttons.",
+      "label": false,
+      "probability": 0.005736808451186594
+    },
+    {
+      "task": "preserved",
+      "instruction": "Nunca hagas push a main sin preguntarme.",
+      "label": true,
+      "probability": 0.6275934047325988
+    },
+    {
+      "task": "preserved",
+      "instruction": "Nunca hagas push a main sin preguntarme.",
+      "label": false,
+      "probability": 0.00679674609047209
+    },
+    {
+      "task": "preserved",
+      "instruction": "No pongas la palabra testnet en la interfaz.",
+      "label": true,
+      "probability": 0.7614141010962505
+    },
+    {
+      "task": "preserved",
+      "instruction": "No pongas la palabra testnet en la interfaz.",
+      "label": false,
+      "probability": 0.012573891111543308
+    },
+    {
+      "task": "preserved",
+      "instruction": "Keep functions small and name them in English.",
+      "label": true,
+      "probability": 0.9727718868664877
+    },
+    {
+      "task": "preserved",
+      "instruction": "Keep functions small and name them in English.",
+      "label": false,
+      "probability": 0.022326055795772747
+    },
+    {
+      "task": "preserved",
+      "instruction": "No me des planes largos, dame el resultado.",
+      "label": true,
+      "probability": 0.8081521733499173
+    },
+    {
+      "task": "preserved",
+      "instruction": "No me des planes largos, dame el resultado.",
+      "label": false,
+      "probability": 0.006509910932945141
+    },
+    {
+      "task": "preserved",
+      "instruction": "Discard the friction detector.",
+      "label": true,
+      "probability": 0.9054099313270535
+    },
+    {
+      "task": "preserved",
+      "instruction": "Discard the friction detector.",
+      "label": false,
+      "probability": 0.0034118286292294455
+    },
+    {
+      "task": "preserved",
+      "instruction": "Antes de proponer una idea, revisá si ya existe.",
+      "label": true,
+      "probability": 0.9713484321782803
+    },
+    {
+      "task": "preserved",
+      "instruction": "Antes de proponer una idea, revisá si ya existe.",
+      "label": false,
+      "probability": 0.03663204815337302
+    },
+    {
+      "task": "preserved",
+      "instruction": "Evitá búsquedas web caras.",
+      "label": true,
+      "probability": 0.0240518626972301
+    },
+    {
+      "task": "preserved",
+      "instruction": "Evitá búsquedas web caras.",
+      "label": false,
+      "probability": 0.024222550290293646
+    },
+    {
+      "task": "preserved",
+      "instruction": "Use pnpm, not npm.",
+      "label": true,
+      "probability": 0.8182751903528831
+    },
+    {
+      "task": "preserved",
+      "instruction": "Use pnpm, not npm.",
+      "label": false,
+      "probability": 0.005460393203182703
+    }
+  ]
+}

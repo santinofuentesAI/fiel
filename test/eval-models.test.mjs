@@ -9,7 +9,7 @@ import { analyzePath } from "../src/analyze.mjs";
 import { encodeProjectKey } from "../src/readers/projects.mjs";
 
 const ROOT = fileURLToPath(new URL("./fixtures/", import.meta.url));
-const RULES = join(ROOT, "demo-tienda");
+const RULES = fileURLToPath(new URL("../examples/demo-tienda/", import.meta.url));
 
 function git(cwd, args, env = {}) {
   execFileSync("git", ["-c", "user.name=fiel", "-c", "user.email=fiel@test", ...args], {
@@ -41,7 +41,8 @@ function analyzeFixture(sessionDir) {
     writeFileSync(file, readFileSync(join(sessionDir, name), "utf8").replaceAll("__ROOT__", projectDir));
     utimesSync(file, old, old);
   }
-  return analyzePath(projectDir, { cursorRoot, now: new Date("2026-11-21T00:00:00Z") }).projects[0];
+  const claudeRoot = mkdtempSync(join(tmpdir(), "fiel-claude-"));
+  return analyzePath(projectDir, { cursorRoot, claudeRoot, now: new Date("2026-11-21T00:00:00Z") }).projects[0];
 }
 
 function rule(project, type) {

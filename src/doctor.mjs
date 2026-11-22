@@ -1,16 +1,19 @@
 import { homedir } from "node:os";
-import { join } from "node:path";
 import { defaultCursorRoot, findCursorTranscripts } from "./readers/cursor.mjs";
+import { defaultClaudeRoot, findClaudeTranscripts } from "./readers/claude.mjs";
 import { findRuleFiles, isGitRepo } from "./analyzers/exposure.mjs";
+import { jevHealth, jevUrl, loadGate } from "./judges/jev.mjs";
 
 function nodeMajor(version = process.versions.node) {
   return Number(version.split(".")[0]);
 }
 
-export function doctor({
+export async function doctor({
   cwd = process.cwd(),
   nodeVersion = process.versions.node,
   cursorRoot = defaultCursorRoot(),
+  claudeRoot = defaultClaudeRoot(),
+  health = jevHealth,
 } = {}) {
   const checks = [];
   const major = nodeMajor(nodeVersion);
@@ -21,15 +24,16 @@ export function doctor({
     detail: major >= 20 ? `v${nodeVersion}` : `v${nodeVersion}; se necesita Node 20 o superior`,
   });
 
-  const transcripts = findCursorTranscripts(cursorRoot);
+  const cursor = findCursorTranscripts(cursorRoot).length;
+  const claude = findClaudeTranscripts(claudeRoot).length;
   checks.push({
-    name: "transcripts",
+    name: "sesiones",
     required: true,
-    ok: transcripts.length > 0,
+    ok: cursor + claude > 0,
     detail:
-      transcripts.length > 0
-        ? `${transcripts.length} sesiones de Cursor en ${cursorRoot}`
-        : `no hay agent-transcripts en ${cursorRoot}`,
+      cursor + claude > 0
+        ? `${cursor} de Cursor (${cursorRoot}), ${claude} de Claude Code (${claudeRoot})`
+        : `no hay transcripts en ${cursorRoot} ni en ${claudeRoot}`,
   });
 
   const ruleFiles = findRuleFiles(cwd);
@@ -52,10 +56,25 @@ export function doctor({
       : "sin git: solo se juzgan sesiones posteriores al mtime del archivo de reglas",
   });
 
+  const jev = await health();
+  const gate = loadGate();
+  const passed = gate ? Object.entries(gate.tasks).filter(([, task]) => task.passed).map(([name]) => name) : [];
+  checks.push({
+    name: "jev",
+    required: false,
+    ok: jev.ok && passed.length > 0,
+    detail: !jev.ok
+      ? `opcional, no responde en ${jevUrl()} (el análisis determinístico no lo necesita)`
+      : gate
+        ? `responde; compuerta: ${passed.length > 0 ? `encendido para ${passed.join(", ")}` : "apagado en todas las tareas"}`
+        : "responde, pero falta medirlo: corre `fiel jev gate`",
+  });
+
   return {
     ok: checks.filter((check) => check.required).every((check) => check.ok),
     home: homedir(),
     cursorRoot,
+    claudeRoot,
     cwd,
     checks,
   };

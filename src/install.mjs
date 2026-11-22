@@ -1,53 +1,99 @@
-import { chmodSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { HOOK_EVENTS } from "./hooks/runtime.mjs";
 
-const EVENTS = ["sessionStart", "preCompact", "beforeSubmitPrompt", "postToolUse"];
+export const HARNESSES = ["cursor", "claude"];
+const MARKER = "fiel.mjs\" hook ";
 
 export function fielBinPath() {
   return join(dirname(fileURLToPath(import.meta.url)), "..", "bin", "fiel.mjs");
 }
 
-function loadHooks(file) {
-  if (!existsSync(file)) return { version: 1, hooks: {} };
+function hookCommand({ nodePath, fielPath }, harness, event) {
+  return `${JSON.stringify(nodePath)} ${JSON.stringify(fielPath)} hook ${harness} ${event}`;
+}
+
+function readConfig(file, fallback) {
+  if (!existsSync(file)) return fallback;
   try {
-    const parsed = JSON.parse(readFileSync(file, "utf8"));
-    return { version: 1, hooks: parsed.hooks && typeof parsed.hooks === "object" ? parsed.hooks : {} };
+    return JSON.parse(readFileSync(file, "utf8"));
   } catch {
-    return { version: 1, hooks: {} };
+    throw new Error(`${file} no es JSON válido; no lo toco.`);
   }
 }
 
-function alreadyHasFiel(entries) {
-  return (entries ?? []).some((entry) => {
-    const command = String(entry.command ?? "");
-    return command.includes("fiel.mjs") && command.includes(" inject ");
+const isFiel = (command) => String(command ?? "").includes(MARKER);
+
+// Cursor: .cursor/hooks.json, flat list per event.
+export function mergeCursorHooks(config, bin) {
+  const hooks = { ...(config.hooks ?? {}) };
+  for (const event of Object.keys(HOOK_EVENTS.cursor)) {
+    const current = (hooks[event] ?? []).filter((entry) => !isFiel(entry.command));
+    hooks[event] = [...current, { command: hookCommand(bin, "cursor", event), timeout: 5 }];
+  }
+  return { ...config, version: config.version ?? 1, hooks };
+}
+
+export function stripCursorHooks(config) {
+  const hooks = {};
+  for (const [event, entries] of Object.entries(config.hooks ?? {})) {
+    const kept = entries.filter((entry) => !isFiel(entry.command));
+    if (kept.length > 0) hooks[event] = kept;
+  }
+  return { ...config, hooks };
+}
+
+// Claude Code: .claude/settings.json, groups of { matcher, hooks: [...] }.
+export function mergeClaudeHooks(settings, bin) {
+  const stripped = stripClaudeHooks(settings);
+  const hooks = { ...(stripped.hooks ?? {}) };
+  for (const event of Object.keys(HOOK_EVENTS.claude)) {
+    const group = { hooks: [{ type: "command", command: hookCommand(bin, "claude", event), timeout: 5 }] };
+    if (event === "PostToolUse") group.matcher = "Read";
+    hooks[event] = [...(hooks[event] ?? []), group];
+  }
+  return { ...stripped, hooks };
+}
+
+export function stripClaudeHooks(settings) {
+  if (!settings.hooks) return settings;
+  const hooks = {};
+  for (const [event, groups] of Object.entries(settings.hooks)) {
+    const kept = groups
+      .map((group) => ({ ...group, hooks: (group.hooks ?? []).filter((hook) => !isFiel(hook.command)) }))
+      .filter((group) => group.hooks.length > 0);
+    if (kept.length > 0) hooks[event] = kept;
+  }
+  return { ...settings, hooks };
+}
+
+const TARGETS = {
+  cursor: { file: [".cursor", "hooks.json"], empty: { version: 1, hooks: {} }, merge: mergeCursorHooks, strip: stripCursorHooks },
+  claude: { file: [".claude", "settings.json"], empty: {}, merge: mergeClaudeHooks, strip: stripClaudeHooks },
+};
+
+function apply(projectDir, harnesses, { dryRun, transform }) {
+  return harnesses.map((harness) => {
+    const target = TARGETS[harness];
+    const file = join(projectDir, ...target.file);
+    const next = transform(target, readConfig(file, target.empty));
+    if (!dryRun) {
+      mkdirSync(dirname(file), { recursive: true });
+      writeFileSync(file, `${JSON.stringify(next, null, 2)}\n`);
+    }
+    return { harness, file, config: next, wrote: !dryRun };
   });
 }
 
-export function mergeFielHooks(existing, { nodePath, fielPath }) {
-  const hooks = { ...existing.hooks };
-  for (const event of EVENTS) {
-    const command = `${JSON.stringify(nodePath)} ${JSON.stringify(fielPath)} inject ${event}`;
-    const entry = {
-      command,
-      timeout: 8,
-      ...(event === "postToolUse" ? { matcher: "Read" } : {}),
-    };
-    const current = Array.isArray(hooks[event]) ? [...hooks[event]] : [];
-    if (!alreadyHasFiel(current)) current.push(entry);
-    hooks[event] = current;
-  }
-  return { version: 1, hooks };
+export function installHooks(
+  projectDir,
+  { harnesses = HARNESSES, nodePath = process.execPath, fielPath = fielBinPath(), dryRun = false } = {},
+) {
+  return apply(projectDir, harnesses, { dryRun, transform: (target, config) => target.merge(config, { nodePath, fielPath }) });
 }
 
-export function installHooks(projectDir, { nodePath = process.execPath, fielPath = fielBinPath(), dryRun = false } = {}) {
-  const cursorDir = join(projectDir, ".cursor");
-  const hooksFile = join(cursorDir, "hooks.json");
-  const merged = mergeFielHooks(loadHooks(hooksFile), { nodePath, fielPath });
-  if (dryRun) return { hooksFile, merged, wrote: false };
-  mkdirSync(cursorDir, { recursive: true });
-  writeFileSync(hooksFile, `${JSON.stringify(merged, null, 2)}\n`);
-  chmodSync(hooksFile, 0o644);
-  return { hooksFile, merged, wrote: true };
+export function uninstallHooks(projectDir, { harnesses = HARNESSES, dryRun = false } = {}) {
+  const present = harnesses.filter((harness) => existsSync(join(projectDir, ...TARGETS[harness].file)));
+  return apply(projectDir, present, { dryRun, transform: (target, config) => target.strip(config) });
 }

@@ -40,7 +40,12 @@ function fixture() {
 function fiel(args, cursorRoot) {
   return spawnSync(process.execPath, [BIN, ...args], {
     encoding: "utf8",
-    env: { ...process.env, FIEL_CURSOR_PROJECTS: cursorRoot, NO_COLOR: "1" },
+    env: {
+      ...process.env,
+      FIEL_CURSOR_PROJECTS: cursorRoot,
+      FIEL_CLAUDE_PROJECTS: join(cursorRoot, "no-claude"),
+      NO_COLOR: "1",
+    },
   });
 }
 

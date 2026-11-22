@@ -3,54 +3,67 @@ import assert from "node:assert/strict";
 import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { lostAtCompact, needleFor } from "../src/analyzers/compaction.mjs";
+import { chatDirectivesAtCompact } from "../src/analyzers/compaction.mjs";
+import { anchorsOf, extractDirectives } from "../src/analyzers/directives.mjs";
 
-test("marca una instrucción presente en un segmento anterior y ausente del último", () => {
-  const dir = mkdtempSync(join(tmpdir(), "fiel-compact-"));
-  const compaction = join(dir, "compaction");
-  mkdirSync(compaction);
-  writeFileSync(
-    join(compaction, "segment_000.md"),
-    "## Summary\n\nDon't edit src/generated/*; regenerate with npm run gen.\n",
+const user = (index, text) => ({ index, kind: "user_text", text, timestamp: null });
+
+test("extractDirectives toma frases con nunca/no toques/don't/instead of y saca anclas", () => {
+  const found = extractDirectives(
+    "Arreglá el bug. Ojo: no toques `scripts/db-reset.mjs`.\nUsá pnpm en vez de npm.\nGracias!",
   );
-  writeFileSync(join(compaction, "segment_001.md"), "## Summary\n\nThe agent renamed a function and ran tests.\n");
-  const transcript = join(dir, "abc.jsonl");
-  writeFileSync(transcript, "");
-
-  const instructions = [
-    {
-      id: "gen1",
-      sourceFile: "AGENTS.md",
-      lineNumber: 7,
-      text: "Don't edit `src/generated/*`; regenerate with `npm run gen`.",
-      paths: ["src/generated/*"],
-    },
-  ];
-  assert.equal(needleFor(instructions[0]), "src/generated/*");
-  const lost = lostAtCompact({ transcriptFile: transcript, instructions });
-  assert.equal(lost.length, 1);
-  assert.equal(lost[0].id, "gen1");
+  assert.deepEqual(
+    found.map((item) => item.text),
+    ["Ojo: no toques `scripts/db-reset.mjs`.", "Usá pnpm en vez de npm."],
+  );
+  assert.deepEqual(found[0].anchors, ["scripts/db-reset.mjs"]);
+  assert.deepEqual(found[1].anchors, []);
 });
 
-test("no marca si la instrucción sigue en el último segmento", () => {
-  const dir = mkdtempSync(join(tmpdir(), "fiel-compact-keep-"));
-  const compaction = join(dir, "compaction");
-  mkdirSync(compaction);
-  writeFileSync(join(compaction, "segment_000.md"), "Don't edit src/generated/*\n");
-  writeFileSync(join(compaction, "segment_001.md"), "Still: src/generated/* must not be edited by hand.\n");
-  const transcript = join(dir, "abc.jsonl");
-  writeFileSync(transcript, "");
-  const lost = lostAtCompact({
-    transcriptFile: transcript,
-    instructions: [
-      {
-        id: "gen1",
-        sourceFile: "AGENTS.md",
-        lineNumber: 7,
-        text: "Don't edit src/generated/*",
-        paths: ["src/generated/*"],
-      },
+test("extractDirectives ignora las plantillas que Cursor mete en el mensaje", () => {
+  assert.deepEqual(extractDirectives("Implement the plan. Do NOT edit the plan file itself."), []);
+  assert.deepEqual(anchorsOf("corré `npm run check` con --watch"), ["npm run check", "--watch"]);
+});
+
+test("Claude Code: la instrucción anclada que no está en el último resumen cuenta como perdida", () => {
+  const session = {
+    session: "s1",
+    harness: "claude",
+    events: [
+      user(0, "Ojo: no toques `scripts/db-reset.mjs`. Nunca uses `--force`."),
+      { index: 3, kind: "compact_summary", text: "Summary: never use --force when pushing." },
+      user(4, "no toques `src/late.mjs`"),
     ],
-  });
-  assert.equal(lost.length, 0);
+  };
+  const result = chatDirectivesAtCompact(session);
+  assert.equal(result.compactions, 1);
+  assert.deepEqual(result.lost.map((item) => item.anchors), [["scripts/db-reset.mjs"]]);
+  assert.deepEqual(result.kept.map((item) => item.anchors), [["--force"]]);
+});
+
+test("Cursor: usa el resumen del último segment_*.md y solo los mensajes compactados", () => {
+  const dir = mkdtempSync(join(tmpdir(), "fiel-compact-"));
+  mkdirSync(join(dir, "compaction"));
+  const early = "No toques `src/generated/api.ts` por nada.";
+  writeFileSync(
+    join(dir, "compaction", "segment_000.md"),
+    `## Summary (curated by compaction step)\nAll good.\n## Verbatim turns\nUser: ${early}\n`,
+  );
+  writeFileSync(
+    join(dir, "compaction", "segment_001.md"),
+    "## Summary (curated by compaction step)\nThe user wants small functions.\n## Verbatim turns\nsrc/generated/api.ts was read\n",
+  );
+  const session = {
+    session: "c1",
+    harness: "cursor",
+    file: join(dir, "c1.jsonl"),
+    events: [user(0, early), user(9, "Nunca corras `rm -rf data`.")],
+  };
+  const result = chatDirectivesAtCompact(session);
+  assert.equal(result.compactions, 2);
+  assert.deepEqual(result.lost.map((item) => item.text), [early]);
+});
+
+test("sin compactación devuelve null", () => {
+  assert.equal(chatDirectivesAtCompact({ session: "x", harness: "claude", events: [user(0, "no toques `a.js`")] }), null);
 });

@@ -79,13 +79,14 @@ export function suggestFromAnalysis(project, { now = new Date() } = {}) {
       );
     }
   }
-  for (const lost of project.lostAtCompact ?? []) {
-    const item = suggestionRecord(lost, {
+  for (const lost of project.compaction?.lost ?? []) {
+    const source = { id: lost.id, sourceFile: `chat:${lost.harness}`, lineNumber: lost.sessionId.slice(0, 8) };
+    const item = suggestionRecord(source, {
       kind: "pin",
       trigger: "after_compact",
       glob: null,
-      fact: `[${lost.sourceFile}:${lost.lineNumber}] Tras compactar, esta instrucción dejó de aparecer en el resumen: ${lost.text.slice(0, 80)}`,
-      evidence: [{ sessionId: lost.sessionId, tool: "compaction", argument: lost.needle }],
+      fact: `En una sesión anterior el usuario pidió «${lost.text.slice(0, 160)}» y el resumen de la compactación lo perdió.`,
+      evidence: [{ sessionId: lost.sessionId, tool: "compaction", argument: lost.anchors.join(", ") }],
       now,
     });
     if (!seen.has(item.id)) {

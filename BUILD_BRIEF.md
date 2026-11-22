@@ -279,9 +279,17 @@ Huecos detectados en reglas reales (no son ninguno de los 4 tipos): comando proh
 | 2 | `gemini-3-flash` | neutral | `fiel-eval/flash-1` … `flash-5` |
 | 3 | `composer-2.5-fast` | “rápido, sin tests” | `fiel-eval/rush-1` … `rush-5` |
 
-Fixtures: `test/fixtures/demo-tienda/`, `eval-flash-4/`, `eval-rush-2/`, `eval-hit-generated/`, `eval-hit-rm/`. Ronda 4: verdadero positivo de `forbidden_path` (edit a mano de `src/generated/api-client.mjs`) y de `forbidden_command` (`rm -rf` con ruta absoluta; Fiel al inicio no lo veía). `hit-rules` carga `.cursor/rules/*.mdc`. Grok 4.6 medium cumplió lint y test.
+Fixtures: `examples/demo-tienda/` (antes `test/fixtures/demo-tienda/`), `eval-flash-4/`, `eval-rush-2/`, `eval-hit-generated/`, `eval-hit-rm/`. Ronda 4: verdadero positivo de `forbidden_path` (edit a mano de `src/generated/api-client.mjs`) y de `forbidden_command` (`rm -rf` con ruta absoluta; Fiel al inicio no lo veía). `hit-rules` carga `.cursor/rules/*.mdc`. Grok 4.6 medium cumplió lint y test.
 
-22 nov: `fiel suggest` / `apply` / `undo`, detección de instrucciones perdidas en `compaction/segment_*.md`, y `fiel install` (hooks de Cursor que inyectan hechos de `.fiel/`, sin deny). Claude Code / Codex / Jev siguen fuera.
+22 nov: `fiel suggest` / `apply` / `undo`, detección de instrucciones perdidas en `compaction/segment_*.md`, y `fiel install` (hooks de Cursor que inyectan hechos de `.fiel/`, sin deny).
+
+## 11e. v0.3.0 (22 nov, tarde)
+
+- La compactación v1 marcaba reglas de `AGENTS.md` como perdidas, pero esas reglas se reenvían en cada turno. Ahora se revisan las **instrucciones escritas en el chat** contra el resumen (`src/analyzers/directives.mjs`, `compaction.mjs`). En historiales reales, 8 de 106 sesiones de Cursor tuvieron compactación; una pérdida real fue "ejecuta `npm run agents:sync`" tras 7 compactaciones.
+- Lector de Claude Code (`src/readers/claude.mjs`) probado con un JSONL escrito a mano según el formato documentado (sección 3.2); este equipo no tiene sesiones reales de Claude Code.
+- Hooks de los dos harnesses en `src/hooks/runtime.mjs`. En Cursor solo `sessionStart` y `postToolUse` aceptan `additional_context`: `preCompact` marca la conversación y el siguiente `postToolUse` reinyecta.
+- Jev: compuerta de 48 casos en pares; umbral elegido en una mitad y medido en la otra, con mínimo de precisión 0,9 y recall 0,15. La regla va dentro de la pregunta. `violation` quedó encendida (prueba: precisión 1,0, recall 0,33) y `preserved` apagada (calibración: precisión 0,86). Archivo: `docs/jev-gate.json`. Sobre los 18 proyectos reales, Jev hizo 19 preguntas y ninguna superó el umbral.
+- `fiel demo`, CLI en `src/cli/`, CI en Node 20 y 22. Codex sigue fuera.
 
 ## 12. Referencias
 - Hackathon: https://www.trydojo.io/hackathons/dojo-ai-hack

@@ -5,7 +5,7 @@ node_modules/
 .DS_Store
 
 # Material personal del workspace, no forma parte del producto
-.cursor/
-.research/
-AGENTS.md
-.fiel/
+/.cursor/
+/.research/
+/AGENTS.md
+/.fiel/

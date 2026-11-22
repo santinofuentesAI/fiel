@@ -246,7 +246,12 @@ export function analyzeSessions({
 
   for (const session of sessions) {
     if (!session.start) {
-      report.push({ sessionId: session.session, status: "skipped", reason: "sin fecha en el transcript" });
+      report.push({
+        sessionId: session.session,
+        harness: session.harness ?? "cursor",
+        status: "skipped",
+        reason: "sin fecha en el transcript",
+      });
       continue;
     }
     const exposure = exposureFor(session.start);
@@ -256,6 +261,7 @@ export function analyzeSessions({
     if (known.length === 0 && unknown.length > 0) {
       report.push({
         sessionId: session.session,
+        harness: session.harness ?? "cursor",
         start: session.start,
         status: "skipped",
         reason: "exposición desconocida",
@@ -297,11 +303,13 @@ export function analyzeSessions({
 
     report.push({
       sessionId: session.session,
+      harness: session.harness ?? "cursor",
       start: session.start,
       status: "analyzed",
       ongoing,
       userTurns: turns,
       exposedRules: exposedIds.size,
+      exposedRuleIds: [...exposedIds],
       exposure: summary,
     });
   }

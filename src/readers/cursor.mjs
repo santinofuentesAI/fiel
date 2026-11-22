@@ -6,7 +6,7 @@ const USER_QUERY = /<user_query>\s*([\s\S]*?)\s*<\/user_query>/;
 const TIMESTAMP =
   /<timestamp>\s*[A-Za-z]+,\s*([A-Za-z]+)\s+(\d{1,2}),\s*(\d{4}),\s*(\d{1,2}):(\d{2})\s*(AM|PM)\s*\(UTC([+-]\d{1,2})(?::?(\d{2}))?\)\s*<\/timestamp>/;
 const MONTHS = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
-const EDIT_TOOLS = new Set(["Edit", "Write", "StrReplace", "MultiEdit", "EditNotebook"]);
+const EDIT_TOOLS = new Set(["Edit", "Write", "StrReplace", "MultiEdit", "EditNotebook", "NotebookEdit"]);
 const READ_TOOLS = new Set(["Read"]);
 const SHELL_TOOLS = new Set(["Bash", "Shell"]);
 const SEARCH_TOOLS = new Set(["Grep", "Glob"]);
@@ -132,6 +132,7 @@ export function findCursorTranscripts(root = defaultCursorRoot()) {
     walk(dir, found);
     for (const file of found) {
       files.push({
+        harness: "cursor",
         file,
         project,
         session: file.split(sep).pop().replace(".jsonl", ""),
