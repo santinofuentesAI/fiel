@@ -34,7 +34,7 @@
     "hooks"
   ],
   "scripts": {
-    "test": "node --test test/",
+    "test": "node --test test/*.test.mjs",
     "demo": "node bin/fiel.mjs demo"
   },
   "engines": {

@@ -16,10 +16,10 @@ Sin API key, sin servidor, sin dependencias (Node 20+). Tus transcripts no salen
 ## Pruébalo en 30 segundos
 
 ```bash
-npx github:santinofuentesAI/fiel demo
+npx -y --allow-git=all github:santinofuentesAI/fiel demo
 ```
 
-La demo no necesita tu historial. Crea un repo de ejemplo en una carpeta temporal, con 5 sesiones reales de Cursor y 1 sesión de Claude Code escrita a mano. Lo analiza, aplica las propuestas y simula los hooks. Salida real (recortada):
+`--allow-git=all` hace falta desde npm 12, que bloquea por defecto los paquetes que vienen de git; npm 10 y 11 solo avisan que no conocen la opción. La demo no necesita tu historial. Crea un repo de ejemplo en una carpeta temporal, con 5 sesiones reales de Cursor y 1 sesión de Claude Code escrita a mano. Lo analiza, aplica las propuestas y simula los hooks. Salida real (recortada):
 
 ```text
 Sesiones: 6 (cursor 5, claude 1), analizadas 6
@@ -41,7 +41,7 @@ Keep these instructions the user wrote in this chat verbatim in the summary:
 ## Instalación
 
 ```bash
-npm install -g github:santinofuentesAI/fiel
+npm install -g --allow-git=all github:santinofuentesAI/fiel
 fiel doctor        # revisa Node, sesiones de Cursor y Claude Code, reglas, git y Jev
 fiel analyze       # el proyecto de la carpeta actual
 ```
