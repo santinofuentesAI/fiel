@@ -1,24 +1,36 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="640" viewBox="0 0 1280 640" role="img" aria-label="Held: caja negra de las sesiones de tu agente">
-  <defs>
-    <radialGradient id="vignette" cx="50%" cy="45%" r="70%">
-      <stop offset="0%" stop-color="#16140f"/>
-      <stop offset="100%" stop-color="#0b0b0c"/>
-    </radialGradient>
-  </defs>
-  <rect width="1280" height="640" fill="#0b0b0c"/>
-  <rect x="0" y="0" width="1280" height="640" fill="url(#vignette)"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="640" viewBox="0 0 1280 640" role="img" aria-label="Held sostiene las instrucciones que el harness olvida al compactar">
+  <rect width="1280" height="640" fill="#0a0a0b"/>
+  <rect x="0" y="0" width="6" height="640" fill="#e2c36b"/>
 
-  <text x="640" y="86" text-anchor="middle" fill="#8a7a4a" font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif" font-size="13" letter-spacing="6">CLI &#183; CURSOR &#183; CLAUDE CODE</text>
+  <text x="72" y="88" fill="#8a8680" font-family="Noto Sans" font-size="13" font-weight="600" letter-spacing="4">CURSOR &#183; CLAUDE CODE</text>
 
-  <text x="640" y="300" text-anchor="middle" fill="#d4b45a" font-family="Georgia, 'Times New Roman', Times, serif" font-size="128" letter-spacing="22">HELD</text>
-  <rect x="490" y="338" width="300" height="1.5" fill="#d4b45a"/>
-  <text x="640" y="390" text-anchor="middle" fill="#e8e2d2" font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif" font-size="22">Le escribes reglas a tu agente. Held te dice si las cumpli&#243;.</text>
-  <text x="640" y="428" text-anchor="middle" fill="#8a7a4a" font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif" font-size="15" letter-spacing="3">FLIGHT RECORDER FOR AI CODING AGENTS</text>
+  <text x="72" y="250" fill="#f4f1ea" font-family="Noto Sans" font-size="92" font-weight="900" letter-spacing="4">HELD</text>
 
-  <g font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif" font-size="14" fill="#cfc6b0" text-anchor="middle">
-    <text x="280" y="560"><tspan fill="#d4b45a" font-size="20" font-weight="700">13 &#8594; 2</tspan><tspan dx="8" fill="#8a7a4a">violaciones, mismo modelo</tspan></text>
-    <text x="640" y="560"><tspan fill="#d4b45a" font-size="20" font-weight="700">1,0</tspan><tspan dx="8" fill="#8a7a4a">precisi&#243;n y recall</tspan></text>
-    <text x="1000" y="560"><tspan fill="#d4b45a" font-size="20" font-weight="700">70</tspan><tspan dx="8" fill="#8a7a4a">tokens inyectados</tspan></text>
+  <text x="72" y="318" fill="#f4f1ea" font-family="Noto Sans" font-size="26" font-weight="500">El harness compacta. Tu instrucci&#243;n desaparece.</text>
+  <text x="72" y="356" fill="#e2c36b" font-family="Noto Sans" font-size="26" font-weight="700">Held la sostiene.</text>
+
+  <text x="72" y="560" fill="#6e6a64" font-family="Noto Sans" font-size="14">CLI local &#183; audita sesiones reales &#183; reinyecta lo olvidado</text>
+
+  <g transform="translate(700, 110)">
+    <rect width="508" height="420" rx="18" fill="#121214" stroke="#2a2a30" stroke-width="1"/>
+    <circle cx="28" cy="28" r="6" fill="#3d3d42"/>
+    <circle cx="48" cy="28" r="6" fill="#3d3d42"/>
+    <circle cx="68" cy="28" r="6" fill="#3d3d42"/>
+    <text x="96" y="33" fill="#6e6a64" font-family="Liberation Mono" font-size="13">held report</text>
+    <rect x="0" y="48" width="508" height="1" fill="#2a2a30"/>
+
+    <text x="28" y="92" fill="#6e6a64" font-family="Liberation Mono" font-size="13">chat</text>
+    <text x="28" y="122" fill="#f4f1ea" font-family="Liberation Mono" font-size="15">&#171;no toques scripts/db-reset.mjs&#187;</text>
+
+    <text x="28" y="172" fill="#6e6a64" font-family="Liberation Mono" font-size="13">despu&#233;s de compactar</text>
+    <text x="28" y="202" fill="#c45c5c" font-family="Liberation Mono" font-size="15">desapareci&#243; del resumen</text>
+
+    <rect x="28" y="236" width="452" height="1" fill="#2a2a30"/>
+
+    <text x="28" y="278" fill="#6e6a64" font-family="Liberation Mono" font-size="13">Held</text>
+    <text x="28" y="312" fill="#e2c36b" font-family="Liberation Mono" font-size="15">la guard&#243; textual</text>
+    <text x="28" y="344" fill="#e2c36b" font-family="Liberation Mono" font-size="15">se la devolvi&#243; al agente</text>
+    <text x="28" y="390" fill="#6e6a64" font-family="Liberation Mono" font-size="13">antes de que vuelva a romper la regla</text>
   </g>
 </svg>

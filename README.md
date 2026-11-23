@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <img src="docs/hero.png" alt="Held: le escribes reglas a tu agente. Held te dice si las cumplió." width="920">
+  <img src="docs/hero.png" alt="Held: el harness compacta, tu instrucción desaparece. Held la sostiene." width="920">
 </p>
 
 <p align="center">
@@ -26,11 +26,11 @@ Held lo mide. Lee las sesiones de Cursor y Claude Code que ya están en tu disco
 2. **Encuentra la amnesia de la compactación.** Los archivos de reglas se reenvían en cada turno; lo que dices en el chat no. Cuando el contexto se llena y se resume, Held compara tus instrucciones con el resumen y te dice cuáles se perdieron.
 3. **Cierra el ciclo y lo vuelve a medir.** Convierte cada falla en un hecho que los hooks de Cursor y Claude Code reinyectan en el momento justo (al leer esa ruta, después de compactar). En la siguiente corrida te muestra si la regla dejó de romperse: medir, intervenir, medir otra vez.
 
-**Evidencia, no impresiones:** con los 3 hechos que Held inyecta (unos 70 tokens), el mismo modelo en las mismas 5 tareas pasó de **13 violaciones a 2** frente a un control del mismo día ([experimento](#sirve-reinyectar-experimento-controlado)). Mide con precisión y recall 1,0 en 19 sesiones reales con hoja de verdad revisada a mano (28 violaciones). En un proyecto real encontró al agente editando a mano, dos veces, código generado que `AGENTS.md` prohibía tocar. En otro, una instrucción del chat ("ejecuta `npm run agents:sync`") que desapareció del resumen tras 7 compactaciones.
+**Evidencia, no impresiones:** en un proyecto real encontró al agente editando a mano, dos veces, código generado que `AGENTS.md` prohibía tocar. En otro, una instrucción del chat ("ejecuta `npm run agents:sync`") que desapareció del resumen tras 7 compactaciones. Precisión y recall 1,0 en 19 sesiones reales con hoja de verdad revisada a mano. El [experimento controlado](#sirve-reinyectar-experimento-controlado) está en Evaluación.
 
 Sin API key, sin servidor, sin dependencias (Node 20+). Tus transcripts no salen de tu máquina y Held nunca edita tus reglas: todo vive en `.held/`.
 
-*In English: You write rules for your coding agent and never find out whether it followed them. Held is a zero-dependency CLI that audits the Cursor and Claude Code sessions already on your disk. It judges each session against the rules as they existed that day (rebuilt from git), catches chat instructions lost when the context is compacted, and closes the loop: hooks re-inject what was forgotten, and the next run shows whether the rule stopped breaking. In a same-day controlled run, the 3 facts Held injects (~70 tokens) cut violations from 13 to 2 on the same 5 tasks and model. Precision and recall 1.0 on 19 hand-labeled real sessions. An optional local judge (Jev) only turns on for tasks where it passed a measured precision gate.*
+*In English: You write rules for your coding agent and never find out whether it followed them. Held is a zero-dependency CLI that audits the Cursor and Claude Code sessions already on your disk. It judges each session against the rules as they existed that day (rebuilt from git), catches chat instructions lost when the context is compacted, and closes the loop: hooks re-inject what was forgotten, and the next run shows whether the rule stopped breaking. Precision and recall 1.0 on 19 hand-labeled real sessions. An optional local judge (Jev) only turns on for tasks where it passed a measured precision gate.*
 
 ## Pruébalo en 30 segundos
 
@@ -247,7 +247,7 @@ Hechos medidos por Held en sesiones anteriores (información, no órdenes):
 
 Cada veredicto se revisó a mano contra los comandos y ediciones de la sesión. Los 10 transcripts están en [`examples/pin-experiment/`](examples/pin-experiment/) y [`test/experiment.test.mjs`](test/experiment.test.mjs) reproduce la tabla. Un detalle: en la única sesión con violaciones, el agente corrió `node --test` dos veces y no lo mencionó en su propio resumen; Held lo encontró igual.
 
-Límites: 5 sesiones por grupo y una corrida por tarea, así que es una señal fuerte, no una estadística. Los subagentes de Cursor no ejecutan los hooks del repo, así que el texto del hook se puso al inicio del prompt en lugar de que lo inyectara Cursor. No se probó un tercer grupo con el `AGENTS.md` completo repetido; la ventaja que sí está medida es que Held elige 3 de 9 reglas, las que este modelo rompe, en unos 70 tokens.
+Límites: 5 sesiones por grupo y una corrida por tarea, así que es una señal fuerte, no una estadística. Los subagentes de Cursor no ejecutan los hooks del repo, así que el texto del hook se puso al inicio del prompt en lugar de que lo inyectara Cursor. No se probó un tercer grupo con el `AGENTS.md` completo repetido; la ventaja que sí está medida es que Held elige 3 de 9 reglas: las que este modelo rompe.
 
 ### Proyecto real (Pymesolve)
 
