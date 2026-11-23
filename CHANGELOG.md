@@ -5,6 +5,7 @@
 - **Experimento controlado**: mismas 5 tareas y modelo; control del mismo día 13 violaciones (4 de 5 sesiones), con los 3 hechos de Held 2 (1 de 5). Transcripts en `examples/pin-experiment/`, reproducido por `test/experiment.test.mjs`.
 - Pitch del README reescrito: auditoría con las reglas de ese día, amnesia de compactación y ciclo medido.
 - Hero e icono del producto (compactación → Held la sostiene). Paquete npm `held-cli` (el nombre `held` está tomado; el comando sigue siendo `held`).
+- Instalar sin el registro de npm: `git clone` y `node bin/held.mjs`, o `npx --package github:santinofuentesAI/held held`. `npx held-cli` no está publicado.
 
 ## 0.6.0 (22 nov 2026)
 

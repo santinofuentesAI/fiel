@@ -191,7 +191,7 @@ export async function installCommand(options) {
     out(dim("El hook usa CURSOR_PROJECT_DIR / CLAUDE_PROJECT_DIR cuando el IDE los define."));
     out(dim("Los comandos llevan rutas absolutas de esta máquina: no commitees .cursor/hooks.json si tu equipo no comparte esas rutas."));
     if (isEphemeralInstall()) {
-      out(yellow("Aviso: Held corre desde la caché de npx; los hooks se rompen cuando npm la limpie. Instálalo global y corre `held install` de nuevo."));
+      out(yellow("Aviso: Held corre desde la caché de npx; los hooks se rompen cuando npm la limpie. Instálalo con `npm install -g --allow-git=all github:santinofuentesAI/held` y corre `held install` de nuevo."));
     }
   }
 }
@@ -284,7 +284,7 @@ export async function onboardCommand(options, { version }) {
     out(dim("Cursor: su preCompact no puede influir en el resumen; Held las reinyecta en la primera herramienta después de compactar."));
   }
   if (!options.dryRun && isEphemeralInstall()) {
-    out(yellow("Aviso: Held corre desde la caché de npx; los hooks se rompen cuando npm la limpie. Instálalo global y corre `held onboard` de nuevo."));
+    out(yellow("Aviso: Held corre desde la caché de npx; los hooks se rompen cuando npm la limpie. Instálalo con `npm install -g --allow-git=all github:santinofuentesAI/held` y corre `held onboard` de nuevo."));
   }
   if (lost > 0) {
     for (const item of result.compaction.lost.slice(0, 5)) {

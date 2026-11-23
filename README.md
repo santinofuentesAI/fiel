@@ -7,7 +7,6 @@
 </p>
 
 <p align="center">
-  <a href="https://www.npmjs.com/package/held-cli"><img src="https://img.shields.io/npm/v/held-cli.svg?color=b8860b" alt="npm held-cli"></a>
   <img src="https://img.shields.io/badge/node-%3E%3D20-2ea44f" alt="Node 20+">
   <img src="https://img.shields.io/badge/tests-100-2ea44f" alt="100 tests">
   <img src="https://img.shields.io/badge/deps-0-lightgrey" alt="cero dependencias">
@@ -35,8 +34,18 @@ Sin API key, sin servidor, sin dependencias (Node 20+). Tus transcripts no salen
 ## Pruébalo en 30 segundos
 
 ```bash
-npx -y held-cli demo
+git clone https://github.com/santinofuentesAI/held
+cd held
+node bin/held.mjs demo
 ```
+
+Sin clonar:
+
+```bash
+npx -y --allow-git=all --package github:santinofuentesAI/held held demo
+```
+
+`npx held-cli` no funciona: ese nombre no está publicado en npm. El comando es `held`.
 
 La demo no necesita tu historial. Crea un repo de ejemplo en una carpeta temporal, con 5 sesiones reales de Cursor y 1 sesión de Claude Code escrita a mano. Lo analiza, aplica las propuestas y simula los hooks. Salida real (recortada):
 
@@ -60,15 +69,16 @@ Keep these instructions the user wrote in this chat verbatim in the summary:
 ## Instalación
 
 ```bash
-npm install -g held-cli
+npm install -g --allow-git=all github:santinofuentesAI/held
 held doctor        # revisa Node, sesiones de Cursor y Claude Code, reglas, git y Jev
+cd tu-proyecto
 held onboard       # mide, aplica los pins seguros e instala los hooks en la carpeta actual
 held report        # después: qué cambió desde la última corrida
 ```
 
-El paquete en npm es `held-cli` (`held` ya estaba tomado). El comando es `held`. `fiel` queda como alias con aviso, del nombre anterior. Las URLs `santinofuentesAI/fiel` redirigen a `santinofuentesAI/held`.
+npm 12 pide `--allow-git=all`. En npm 10 y 11 el flag sobra. Desde un clon, sin instalar: `node /ruta/a/held/bin/held.mjs onboard` parado en tu proyecto.
 
-Sin npm: `npx -y --allow-git=all github:santinofuentesAI/held demo` (npm 12 pide `--allow-git=all`; 10 y 11 solo avisan) o `git clone https://github.com/santinofuentesAI/held && cd held && node bin/held.mjs demo`.
+El comando es `held`. `fiel` queda como alias con aviso, del nombre anterior. Las URLs `santinofuentesAI/fiel` redirigen a `santinofuentesAI/held`.
 
 Held busca las sesiones en `~/.cursor/projects/` y `~/.claude/projects/`. Variables útiles:
 

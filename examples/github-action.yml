@@ -18,4 +18,4 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: npx -y held-cli report --fail-on-violations --fail-on-compaction-lost --no-write
+      - run: npx -y --allow-git=all --package github:santinofuentesAI/held held report --fail-on-violations --fail-on-compaction-lost --no-write
